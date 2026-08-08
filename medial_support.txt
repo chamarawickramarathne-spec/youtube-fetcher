@@ -1,0 +1,26 @@
+1. Title
+YouTube Fetcher
+
+2. Short Description
+A fast, clean YouTube video downloader for Windows. Paste a link, pick a quality, and download videos as MP4 or audio as MP3 - all from one simple screen.
+
+3. Long Description
+YouTube Fetcher is a lightweight desktop app for Windows that makes downloading YouTube videos and audio effortless. Just paste a video link and the app instantly fetches the available qualities. Choose from Best Quality (merged video+audio), 720p, 1080p, or Audio Only (MP3), and the download starts automatically - with live progress, speed, and ETA shown right on the screen.
+
+Built with a clean, dark interface, YouTube Fetcher supports multiple parallel downloads, a persistent download history, a custom save folder, and smart auto-paste from your clipboard. Behind the scenes it uses yt-dlp, so it stays reliable even as YouTube changes. The app also includes a built-in auto-update system, so you always have the latest version with one click.
+
+4. Facebook Post Text
+Download YouTube videos on Windows with zero fuss. Paste the link, pick your quality, and YouTube Fetcher does the rest - MP4 video or MP3 audio, parallel downloads, download history, and a clean dark UI. Built-in auto-update keeps it fresh automatically. Free to use and super fast. Try it now!
+
+5. 10 Tags
+#YouTubeDownloader #VideoDownloader #WindowsApp #YouTubeFetcher #MP3Downloader #MP4 #DownloadVideos #YTD #TechTools #DesktopApp
+
+6. 5 Image Prompts
+- Prompt 1: Dark-themed desktop app UI with a red URL input bar, a glowing red "Fetch" button, and a YouTube thumbnail card with a green Download button, clean modern flat design.
+- Prompt 2: Split-screen concept - left side shows a laptop with the YouTube Fetcher app open, right side shows an arrow pointing from a video thumbnail into a download folder icon, isometric style, dark background with red accents.
+- Prompt 3: Floating UI elements of YouTube Fetcher: a paste field, a quality dropdown showing 1080p/720p/MP3 options, a progress bar at 62% with speed and ETA, dark glassmorphism panel on a dark gradient background.
+- Prompt 4: A pile of stacked video file cards and music note icons sliding out of a laptop screen into a folder, with a red-to-orange gradient, energetic tech illustration, dark navy background.
+- Prompt 5: Minimalist product hero banner - YouTube Fetcher logo (red play button merging into a download arrow) centered on a dark background, with the tagline "Paste. Pick. Play." in clean white text below.
+
+7. Changelog
+- Mod 1 (v1.0.0, 2026-08-08): Initial release with auto-update feature, GitHub repo chamarawickramarathne-spec/youtube-fetcher, published GitHub release v1.0.0.

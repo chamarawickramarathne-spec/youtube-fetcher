@@ -1,0 +1,11 @@
+node_modules/
+out/
+release/
+dist/
+dist-electron/
+*.tsbuildinfo
+resources/yt-dlp.exe
+resources/ffmpeg.exe
+Youtube Fetcher Sell/
+*.log
+.DS_Store
