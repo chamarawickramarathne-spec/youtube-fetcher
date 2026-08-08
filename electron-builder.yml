@@ -20,6 +20,7 @@ asarUnpack:
 npmRebuild: false
 win:
   executableName: youtube-fetcher
+  icon: media/icon.ico
   target:
     - target: nsis
       arch:

@@ -23,4 +23,5 @@ Download YouTube videos on Windows with zero fuss. Paste the link, pick your qua
 - Prompt 5: Minimalist product hero banner - YouTube Fetcher logo (red play button merging into a download arrow) centered on a dark background, with the tagline "Paste. Pick. Play." in clean white text below.
 
 7. Changelog
-- Mod 1 (v1.0.0, 2026-08-08): Initial release with auto-update feature, GitHub repo chamarawickramarathne-spec/youtube-fetcher, published GitHub release v1.0.0.
+- Mod 1 (v1.0.0, 2026-08-08): Initial release with auto-update feature, GitHub repo chamarawickramarathne-spec/youtube-fetcher.
+- Mod 2 (v1.0.0, 2026-08-08): Added unique app icon (red play button + download arrow on dark rounded square) in media/icon.ico, published GitHub release v1.0.0.
