@@ -1,6 +1,6 @@
 {
   "name": "youtube-fetcher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "YouTube video downloader desktop app",
   "main": "./out/main/index.js",
   "scripts": {

@@ -28,3 +28,4 @@ Download YouTube videos on Windows with zero fuss. Paste the link, pick your qua
 - Mod 3 (v1.0.0, 2026-08-08): Fixed update check HttpError 406 caused by duplicate draft GitHub releases; deleted duplicate and published the complete release.
 - Mod 4 (v1.0.0, 2026-08-08): Header now shows the app version (v1.0.0) next to the app name with a unified update button beside it (Check Update / Download Update / Restart & Install).
 - Mod 5 (v1.0.0, 2026-08-08): Fixed broken global npm (installed npm 12.0.2) and rebuilt the installer - youtube-fetcher-1.0.0-setup.exe.
+- Mod 6 (v1.0.1, 2026-08-08): Released v1.0.1 with header version display and unified update button; installer youtube-fetcher-1.0.1-setup.exe published to GitHub.

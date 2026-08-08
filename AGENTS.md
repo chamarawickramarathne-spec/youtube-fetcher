@@ -2,7 +2,7 @@
 
 ## App
 - **Name:** YouTube Fetcher
-- **Version:** 1.0.0
+- **Version:** 1.0.1
 - **Type:** Desktop (Windows) - Electron + React + TypeScript
 - **Database:** None (history stored as JSON in userData/history.json)
 - **Binary:** `resources/yt-dlp.exe` + `resources/ffmpeg.exe` (downloaded by `scripts/download-ytdlp.js` on install)
@@ -24,6 +24,7 @@
 | 3   | 1.0.0   | 2026-08-08 | Fixed "Cannot parse releases feed / HttpError 406" on update check. Root cause: GitHub release v1.0.0 existed only as TWO duplicate DRAFT releases (hidden from electron-updater; `/releases/latest` redirected to the list page which returns 406 for `Accept: application/json`). Deleted duplicate draft (no `.blockmap`) and published the complete one (367132917) via GitHub API. Verified `/releases/latest` now returns JSON `tag_name`, `latest.yml` and installer download OK. |
 | 4   | 1.0.0   | 2026-08-08 | Header UI: version number now shown next to the app name (`v{appVersion}`, gray mono) with a single unified update button beside it - gray "Check Update" (idle), red "Download Update" (`available`), green "Restart & Install" (`downloaded`); removed the old separate "Update available"/"Restart to install" buttons from the right side. |
 | 5   | 1.0.0   | 2026-08-08 | Fixed broken npm on this machine that blocked installer builds. npm shims (`E:\AIprojects\AI Agent\npm.cmd`/`npm.ps1`) pointed to `E:\AIprojects\AI Agent\node_modules\npm` which did not exist -> every npm call failed. Installed npm 12.0.2 from registry tarball into `E:\AIprojects\AI Agent\node_modules\npm`; `npm --version` now works. Rebuilt installer -> `release/youtube-fetcher-1.0.0-setup.exe` (449,519,876 bytes). |
+| 6   | 1.0.1   | 2026-08-08 | Released v1.0.1: bumped version, built and published installer `release/youtube-fetcher-1.0.1-setup.exe` to GitHub (tag `v1.0.1`) with electron-updater `--publish always`. Header now displays `v1.0.1` via the packaged app version. |
 
 ## Update Feature
 - Publish provider: GitHub (`chamarawickramarathne-spec/youtube-fetcher`).
