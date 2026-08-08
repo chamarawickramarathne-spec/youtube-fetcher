@@ -323,29 +323,43 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       <header className="border-b border-gray-800 px-6 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-red-500">YouTube Fetcher</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-bold text-red-500">YouTube Fetcher</h1>
+          {appVersion && <span className="text-xs text-gray-500 font-mono">v{appVersion}</span>}
+          <button
+            onClick={
+              updateStatus?.state === 'available'
+                ? handleDownloadUpdate
+                : updateStatus?.state === 'downloaded'
+                  ? handleInstallUpdate
+                  : handleCheckUpdates
+            }
+            disabled={updateStatus?.state === 'checking' || updateStatus?.state === 'downloading'}
+            className={
+              updateStatus?.state === 'available'
+                ? 'px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs transition-colors'
+                : updateStatus?.state === 'downloaded'
+                  ? 'px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs transition-colors'
+                  : 'px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+            }
+            title={
+              updateStatus?.state === 'available'
+                ? 'Download update'
+                : updateStatus?.state === 'downloaded'
+                  ? 'Restart to install update'
+                  : 'Check for updates'
+            }
+          >
+            {updateStatus?.state === 'available'
+              ? 'Download Update'
+              : updateStatus?.state === 'downloaded'
+                ? 'Restart & Install'
+                : 'Check Update'}
+          </button>
+        </div>
         <div className="flex items-center gap-3">
           {activeCount > 0 && (
             <span className="text-xs text-gray-400">{activeCount}/{maxConcurrent} downloading</span>
-          )}
-
-          {updateStatus?.state === 'available' && (
-            <button
-              onClick={handleDownloadUpdate}
-              className="px-2 py-1.5 rounded bg-red-600 hover:bg-red-700 text-white text-xs transition-colors"
-              title="New version available"
-            >
-              Update available
-            </button>
-          )}
-          {updateStatus?.state === 'downloaded' && (
-            <button
-              onClick={handleInstallUpdate}
-              className="px-2 py-1.5 rounded bg-green-600 hover:bg-green-700 text-white text-xs transition-colors"
-              title="Restart to install update"
-            >
-              Restart to install
-            </button>
           )}
 
           <div className="relative" data-settings>

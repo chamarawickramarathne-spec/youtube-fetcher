@@ -7,10 +7,10 @@ A fast, clean YouTube video downloader for Windows. Paste a link, pick a quality
 3. Long Description
 YouTube Fetcher is a lightweight desktop app for Windows that makes downloading YouTube videos and audio effortless. Just paste a video link and the app instantly fetches the available qualities. Choose from Best Quality (merged video+audio), 720p, 1080p, or Audio Only (MP3), and the download starts automatically - with live progress, speed, and ETA shown right on the screen.
 
-Built with a clean, dark interface, YouTube Fetcher supports multiple parallel downloads, a persistent download history, a custom save folder, and smart auto-paste from your clipboard. Behind the scenes it uses yt-dlp, so it stays reliable even as YouTube changes. The app also includes a built-in auto-update system, so you always have the latest version with one click.
+Built with a clean, dark interface, YouTube Fetcher supports multiple parallel downloads, a persistent download history, a custom save folder, and smart auto-paste from your clipboard. Behind the scenes it uses yt-dlp, so it stays reliable even as YouTube changes. The app also includes a built-in auto-update system - the version is shown right next to the app name and a one-click update button keeps you on the latest release at all times.
 
 4. Facebook Post Text
-Download YouTube videos on Windows with zero fuss. Paste the link, pick your quality, and YouTube Fetcher does the rest - MP4 video or MP3 audio, parallel downloads, download history, and a clean dark UI. Built-in auto-update keeps it fresh automatically. Free to use and super fast. Try it now!
+Download YouTube videos on Windows with zero fuss. Paste the link, pick your quality, and YouTube Fetcher does the rest - MP4 video or MP3 audio, parallel downloads, download history, and a clean dark UI. The current version sits right next to the app name, and a built-in one-click updater keeps you on the newest release automatically. Free to use and super fast. Try it now!
 
 5. 10 Tags
 #YouTubeDownloader #VideoDownloader #WindowsApp #YouTubeFetcher #MP3Downloader #MP4 #DownloadVideos #YTD #TechTools #DesktopApp
@@ -18,10 +18,13 @@ Download YouTube videos on Windows with zero fuss. Paste the link, pick your qua
 6. 5 Image Prompts
 - Prompt 1: Dark-themed desktop app UI with a red URL input bar, a glowing red "Fetch" button, and a YouTube thumbnail card with a green Download button, clean modern flat design.
 - Prompt 2: Split-screen concept - left side shows a laptop with the YouTube Fetcher app open, right side shows an arrow pointing from a video thumbnail into a download folder icon, isometric style, dark background with red accents.
-- Prompt 3: Floating UI elements of YouTube Fetcher: a paste field, a quality dropdown showing 1080p/720p/MP3 options, a progress bar at 62% with speed and ETA, dark glassmorphism panel on a dark gradient background.
+- Prompt 3: Close-up of the YouTube Fetcher header showing the app name with a small gray "v1.0.0" version label and a green "Restart & Install" update button beside it, dark glassmorphism panel on a dark gradient background.
 - Prompt 4: A pile of stacked video file cards and music note icons sliding out of a laptop screen into a folder, with a red-to-orange gradient, energetic tech illustration, dark navy background.
 - Prompt 5: Minimalist product hero banner - YouTube Fetcher logo (red play button merging into a download arrow) centered on a dark background, with the tagline "Paste. Pick. Play." in clean white text below.
 
 7. Changelog
 - Mod 1 (v1.0.0, 2026-08-08): Initial release with auto-update feature, GitHub repo chamarawickramarathne-spec/youtube-fetcher.
 - Mod 2 (v1.0.0, 2026-08-08): Added unique app icon (red play button + download arrow on dark rounded square) in media/icon.ico, published GitHub release v1.0.0.
+- Mod 3 (v1.0.0, 2026-08-08): Fixed update check HttpError 406 caused by duplicate draft GitHub releases; deleted duplicate and published the complete release.
+- Mod 4 (v1.0.0, 2026-08-08): Header now shows the app version (v1.0.0) next to the app name with a unified update button beside it (Check Update / Download Update / Restart & Install).
+- Mod 5 (v1.0.0, 2026-08-08): Fixed broken global npm (installed npm 12.0.2) and rebuilt the installer - youtube-fetcher-1.0.0-setup.exe.

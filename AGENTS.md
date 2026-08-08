@@ -12,6 +12,8 @@
 - Installer: `npm run build:win` -> `release/youtube-fetcher-<version>-setup.exe`
 - Update feature uses electron-updater + GitHub releases.
 - Icon: `win.icon` points to `media/icon.ico`; regenerate with `powershell -File scripts/generate-icon.ps1`.
+- NOTE: on this machine the global npm was broken (shims at `E:\AIprojects\AI Agent\npm.cmd`/`npm.ps1` -> missing `E:\AIprojects\AI Agent\node_modules\npm`). Fixed by installing npm 12.0.2 there from the registry tarball. If npm fails again, re-extract the `package/` folder of `https://registry.npmjs.org/npm/-/npm-12.0.2.tgz` into `E:\AIprojects\AI Agent\node_modules\npm`.
+- Can also build without npm via `node_modules\.bin\electron-builder.cmd --win --config` (local binaries still work when global npm is broken), but electron-builder shells out to npm for dependency-tree collection, so a working npm is still required.
 
 ## Modification History
 
@@ -19,6 +21,9 @@
 |-----|---------|------------|---------|
 | 1   | 1.0.0   | 2026-08-08 | Initial app with auto-update feature via electron-updater. Created GitHub repo (chamarawickramarathne-spec/youtube-fetcher, public), publish config in electron-builder.yml, auto-check on startup + manual check/download/install in Settings, header update badge. |
 | 2   | 1.0.0   | 2026-08-08 | Added unique app icon (play button + download arrow, red on dark rounded square) via `scripts/generate-icon.ps1` -> `media/icon.ico`/`icon.png`/`icon-1024.png`, wired `win.icon` in electron-builder.yml. Published GitHub release v1.0.0 with icon. |
+| 3   | 1.0.0   | 2026-08-08 | Fixed "Cannot parse releases feed / HttpError 406" on update check. Root cause: GitHub release v1.0.0 existed only as TWO duplicate DRAFT releases (hidden from electron-updater; `/releases/latest` redirected to the list page which returns 406 for `Accept: application/json`). Deleted duplicate draft (no `.blockmap`) and published the complete one (367132917) via GitHub API. Verified `/releases/latest` now returns JSON `tag_name`, `latest.yml` and installer download OK. |
+| 4   | 1.0.0   | 2026-08-08 | Header UI: version number now shown next to the app name (`v{appVersion}`, gray mono) with a single unified update button beside it - gray "Check Update" (idle), red "Download Update" (`available`), green "Restart & Install" (`downloaded`); removed the old separate "Update available"/"Restart to install" buttons from the right side. |
+| 5   | 1.0.0   | 2026-08-08 | Fixed broken npm on this machine that blocked installer builds. npm shims (`E:\AIprojects\AI Agent\npm.cmd`/`npm.ps1`) pointed to `E:\AIprojects\AI Agent\node_modules\npm` which did not exist -> every npm call failed. Installed npm 12.0.2 from registry tarball into `E:\AIprojects\AI Agent\node_modules\npm`; `npm --version` now works. Rebuilt installer -> `release/youtube-fetcher-1.0.0-setup.exe` (449,519,876 bytes). |
 
 ## Update Feature
 - Publish provider: GitHub (`chamarawickramarathne-spec/youtube-fetcher`).
@@ -27,3 +32,7 @@
   2. `$env:GH_TOKEN = gh auth token`
   3. `npm run build:win -- --publish always`
   4. Git tag `v<version>` and push.
+- IMPORTANT: after publishing, verify the release is NOT a draft. GitHub hides draft releases from electron-updater -> update check fails with `HttpError 406` (or 404). Never leave duplicate drafts with the same tag; delete extras and publish the complete one (keep the draft that includes `latest.yml`, `<name>-<version>-setup.exe` and `.blockmap`).
+- Verify with:
+  - `curl -sL -H "Accept: application/json" https://github.com/chamarawickramarathne-spec/youtube-fetcher/releases/latest` -> JSON with `tag_name`.
+  - `curl -sL https://github.com/chamarawickramarathne-spec/youtube-fetcher/releases/download/v<version>/latest.yml` -> 200.
