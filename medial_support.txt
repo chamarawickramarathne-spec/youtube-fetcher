@@ -9,8 +9,10 @@ YouTube Fetcher is a lightweight desktop app for Windows that makes downloading 
 
 Built with a clean, dark interface, YouTube Fetcher supports multiple parallel downloads, a persistent download history, a custom save folder, and smart auto-paste from your clipboard. Behind the scenes it uses yt-dlp, so it stays reliable even as YouTube changes. The app also includes a built-in auto-update system - the version is shown right next to the app name and a one-click update button keeps you on the latest release at all times.
 
+Now rebuilt in Python for a tiny footprint - the entire installer is just 83 MB (down from 450 MB). Same features, same look, dramatically smaller download.
+
 4. Facebook Post Text
-Download YouTube videos on Windows with zero fuss. Paste the link, pick your quality, and YouTube Fetcher does the rest - MP4 video or MP3 audio, parallel downloads, download history, and a clean dark UI. The current version sits right next to the app name, and a built-in one-click updater keeps you on the newest release automatically. Free to use and super fast. Try it now!
+Download YouTube videos on Windows with zero fuss. Paste the link, pick your quality, and YouTube Fetcher does the rest - MP4 video or MP3 audio, parallel downloads, download history, and a clean dark UI. Now rebuilt in Python with a tiny 83 MB installer (down from 450 MB). The current version sits right next to the app name, and a built-in one-click updater keeps you on the newest release automatically. Free to use and super fast. Try it now!
 
 5. 10 Tags
 #YouTubeDownloader #VideoDownloader #WindowsApp #YouTubeFetcher #MP3Downloader #MP4 #DownloadVideos #YTD #TechTools #DesktopApp
@@ -18,7 +20,7 @@ Download YouTube videos on Windows with zero fuss. Paste the link, pick your qua
 6. 5 Image Prompts
 - Prompt 1: Dark-themed desktop app UI with a red URL input bar, a glowing red "Fetch" button, and a YouTube thumbnail card with a green Download button, clean modern flat design.
 - Prompt 2: Split-screen concept - left side shows a laptop with the YouTube Fetcher app open, right side shows an arrow pointing from a video thumbnail into a download folder icon, isometric style, dark background with red accents.
-- Prompt 3: Close-up of the YouTube Fetcher header showing the app name with a small gray "v1.0.0" version label and a green "Restart & Install" update button beside it, dark glassmorphism panel on a dark gradient background.
+- Prompt 3: Close-up of the YouTube Fetcher header showing the app name with a small gray "v2.0" version label and a green "Restart & Install" update button beside it, dark glassmorphism panel on a dark gradient background.
 - Prompt 4: A pile of stacked video file cards and music note icons sliding out of a laptop screen into a folder, with a red-to-orange gradient, energetic tech illustration, dark navy background.
 - Prompt 5: Minimalist product hero banner - YouTube Fetcher logo (red play button merging into a download arrow) centered on a dark background, with the tagline "Paste. Pick. Play." in clean white text below.
 
@@ -29,3 +31,4 @@ Download YouTube videos on Windows with zero fuss. Paste the link, pick your qua
 - Mod 4 (v1.0.0, 2026-08-08): Header now shows the app version (v1.0.0) next to the app name with a unified update button beside it (Check Update / Download Update / Restart & Install).
 - Mod 5 (v1.0.0, 2026-08-08): Fixed broken global npm (installed npm 12.0.2) and rebuilt the installer - youtube-fetcher-1.0.0-setup.exe.
 - Mod 6 (v1.0.1, 2026-08-08): Released v1.0.1 with header version display and unified update button; installer youtube-fetcher-1.0.1-setup.exe published to GitHub.
+- Mod 7 (v2.0.0, 2026-08-18): Full rewrite from Electron+React to Python+pywebview+vanilla JS. Same UI/UX, all features preserved. Installer shrunk from 450 MB to 83 MB. Single-file frontend, PyInstaller .exe, Inno Setup installer.

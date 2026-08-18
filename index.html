@@ -1,12 +1,801 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YouTube Fetcher</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube Fetcher</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --gray-900: #111827; --gray-800: #1f2937; --gray-700: #374151;
+  --gray-600: #4b5563; --gray-500: #6b7280; --gray-400: #9ca3af;
+  --gray-300: #d1d5db; --gray-200: #e5e7eb;
+  --red-900: #7f1d1d; --red-700: #b91c1c; --red-600: #dc2626;
+  --red-500: #ef4444; --red-400: #f87171; --red-300: #fca5a5;
+  --green-900: #14532d; --green-800: #166534; --green-700: #15803d;
+  --green-600: #16a34a; --green-400: #4ade80;
+  --blue-700: #1d4ed8; --blue-600: #2563eb;
+  --yellow-700: #b45309;
+  --white: #ffffff;
+}
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--gray-900); color: var(--white);
+}
+#app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--gray-900); }
+::-webkit-scrollbar-thumb { background: var(--gray-600); border-radius: 3px; }
+
+/* ── Header ── */
+header {
+  border-bottom: 1px solid var(--gray-800); padding: 12px 24px;
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 8px; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.app-title { font-size: 18px; font-weight: 700; color: var(--red-500); }
+.app-version { font-size: 12px; color: var(--gray-500); font-family: "SF Mono", "Cascadia Code", Consolas, monospace; }
+.active-count { font-size: 12px; color: var(--gray-400); }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500;
+  border: none; cursor: pointer; transition: background-color 0.15s, color 0.15s;
+  white-space: nowrap; line-height: 1.5;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-red { background: var(--red-600); color: var(--white); }
+.btn-red:hover:not(:disabled) { background: var(--red-700); }
+.btn-green { background: var(--green-600); color: var(--white); }
+.btn-green:hover:not(:disabled) { background: var(--green-700); }
+.btn-blue { background: var(--blue-600); color: var(--white); }
+.btn-blue:hover:not(:disabled) { background: var(--blue-700); }
+.btn-gray { background: var(--gray-700); color: var(--gray-300); }
+.btn-gray:hover:not(:disabled) { background: var(--gray-600); }
+.btn-gray-sm { background: var(--gray-600); color: var(--gray-300); }
+.btn-gray-sm:hover:not(:disabled) { background: var(--gray-500); }
+.btn-header { padding: 6px 12px; }
+.btn-update-idle { background: var(--gray-700); color: var(--gray-300); }
+.btn-update-idle:hover:not(:disabled) { background: var(--gray-600); }
+.btn-update-available { background: var(--red-600); color: var(--white); }
+.btn-update-available:hover:not(:disabled) { background: var(--red-700); }
+.btn-update-downloaded { background: var(--green-600); color: var(--white); }
+.btn-update-downloaded:hover:not(:disabled) { background: var(--green-700); }
+
+/* ── Settings gear button ── */
+.btn-gear {
+  padding: 6px 8px; border-radius: 6px; background: var(--gray-700);
+  color: var(--gray-300); border: none; cursor: pointer; transition: background-color 0.15s;
+}
+.btn-gear:hover { background: var(--gray-600); }
+.btn-gear svg { width: 14px; height: 14px; }
+
+/* ── Input form ── */
+main { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; max-width: 768px; margin: 0 auto; width: 100%; overflow-y: auto; }
+.url-form { display: flex; gap: 8px; }
+.url-input {
+  flex: 1; padding: 10px 16px; border-radius: 8px;
+  background: var(--gray-800); border: 1px solid var(--gray-600);
+  color: var(--white); font-size: 14px; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.url-input::placeholder { color: var(--gray-400); }
+.url-input:focus { border-color: var(--red-500); box-shadow: 0 0 0 1px var(--red-500); }
+.btn-fetch { padding: 10px 20px; border-radius: 8px; }
+
+/* ── Download rows ── */
+.download-list { display: flex; flex-direction: column; gap: 8px; }
+.download-row {
+  border-radius: 8px; border: 1px solid var(--gray-700); background: var(--gray-800);
+  padding: 12px; transition: background-color 0.15s, border-color 0.15s;
+}
+.download-row.is-error { background: rgba(127,29,29,0.3); border-color: var(--red-700); }
+.download-row.is-completed { background: rgba(20,83,45,0.2); border-color: var(--green-800); }
+.download-row.is-paused { border-color: var(--yellow-700); border-style: dashed; }
+.row-inner { display: flex; align-items: center; gap: 12px; }
+
+/* ── Thumbnail ── */
+.thumb { width: 80px; height: 48px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+.thumb-placeholder {
+  width: 80px; height: 48px; border-radius: 4px; background: var(--gray-700);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* ── Spinner ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 16px; height: 16px; animation: spin 0.8s linear infinite;
+}
+.spinner circle { stroke: var(--gray-400); }
+
+/* ── Info section ── */
+.row-info { flex: 1; min-width: 0; }
+.info-line { display: flex; align-items: center; gap: 6px; }
+.yt-badge {
+  padding: 2px 6px; border-radius: 4px;
+  background: rgba(127,29,29,0.6); color: var(--red-300);
+  font-size: 10px; flex-shrink: 0; font-weight: 500;
+}
+.row-title {
+  font-size: 14px; font-weight: 500; color: var(--white);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.row-url { font-size: 12px; color: var(--gray-400); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-duration { font-size: 12px; color: var(--gray-500); flex-shrink: 0; }
+
+/* ── Format select ── */
+.format-select {
+  background: var(--gray-700); border: 1px solid var(--gray-600);
+  color: var(--white); font-size: 12px; border-radius: 4px;
+  padding: 6px 8px; outline: none; flex-shrink: 0;
+  cursor: pointer;
+}
+.format-select:focus { border-color: var(--red-500); }
+
+/* ── Progress ── */
+.progress-section { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.progress-bar-wrap { width: 112px; }
+.progress-texts { display: flex; justify-content: space-between; font-size: 10px; color: var(--gray-300); margin-bottom: 2px; }
+.progress-speed { color: var(--gray-500); }
+.progress-track { width: 100%; height: 6px; background: var(--gray-700); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 6px; background: var(--red-500); border-radius: 3px; transition: width 0.3s; }
+.btn-pause { padding: 4px 8px; font-size: 10px; }
+
+/* ── Status labels ── */
+.status-done { color: var(--green-400); font-size: 12px; flex-shrink: 0; }
+.status-error {
+  color: var(--red-400); font-size: 12px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; max-width: 128px; flex-shrink: 0;
+}
+
+/* ── Action buttons (trash, dismiss) ── */
+.row-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.btn-icon {
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: var(--gray-500); transition: color 0.15s; display: inline-flex; align-items: center;
+}
+.btn-icon:hover { color: var(--gray-300); }
+.btn-icon.danger:hover { color: var(--red-400); }
+.btn-icon svg { width: 14px; height: 14px; }
+.btn-dismiss { font-size: 12px; }
+
+/* ── History ── */
+.history-header {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--gray-400); font-size: 12px; cursor: pointer; margin-top: 8px; margin-bottom: 8px;
+  user-select: none; border: none; background: none; width: 100%; text-align: left; padding: 0;
+}
+.history-header:hover { color: var(--gray-200); }
+.history-chevron { width: 12px; height: 12px; transition: transform 0.15s; }
+.history-chevron.open { transform: rotate(90deg); }
+.history-clear { margin-left: auto; font-size: 10px; color: var(--gray-500); cursor: pointer; background: none; border: none; padding: 0; }
+.history-clear:hover { color: var(--red-400); }
+
+/* ── Empty state ── */
+.empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.empty-primary { color: var(--gray-500); font-size: 14px; }
+.empty-secondary { color: var(--gray-600); font-size: 10px; }
+
+/* ── Settings panel ── */
+.settings-wrap { position: relative; }
+.settings-panel {
+  position: absolute; right: 0; top: 100%; margin-top: 4px;
+  background: var(--gray-800); border: 1px solid var(--gray-600);
+  border-radius: 8px; padding: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4), 0 8px 10px -6px rgba(0,0,0,0.3);
+  z-index: 50; width: 256px;
+}
+.settings-label { display: block; font-size: 12px; color: var(--gray-400); margin-bottom: 6px; }
+.settings-slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.settings-slider {
+  flex: 1; accent-color: var(--red-500); height: 4px;
+  -webkit-appearance: none; background: var(--gray-700); border-radius: 2px; outline: none;
+}
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px;
+  border-radius: 50%; background: var(--red-500); cursor: pointer;
+}
+.settings-slider-val { color: var(--white); font-size: 14px; font-family: "SF Mono", "Cascadia Code", Consolas, monospace; width: 24px; text-align: center; }
+.settings-hint { font-size: 10px; color: var(--gray-500); margin-bottom: 12px; }
+.settings-path-row { display: flex; align-items: center; gap: 8px; }
+.settings-path {
+  flex: 1; font-size: 11px; color: var(--gray-300); background: var(--gray-700);
+  border-radius: 4px; padding: 6px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.settings-reset { font-size: 10px; color: var(--gray-500); cursor: pointer; background: none; border: none; padding: 0; margin-top: 4px; display: inline-block; }
+.settings-reset:hover { color: var(--red-400); }
+.settings-divider { border: none; border-top: 1px solid var(--gray-700); margin: 12px 0 0; padding-top: 12px; }
+.settings-updates-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.settings-update-status { font-size: 11px; color: var(--gray-400); margin-bottom: 8px; min-height: 14px; }
+.settings-update-progress { height: 4px; background: var(--gray-700); border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
+.settings-update-progress-fill { height: 4px; background: var(--red-500); border-radius: 2px; transition: width 0.3s; }
+.settings-update-btns { display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ── State ──
+const state = {
+  url: '',
+  items: [],
+  showHistory: false,
+  showSettings: false,
+  maxConcurrent: 1,
+  savePath: '',
+  updateStatus: null,
+  appVersion: '',
+  historyLoaded: false,
+};
+let nextId = 0;
+let historyTimer = null;
+const API = () => window.pywebview ? window.pywebview.api : null;
+
+// ── ID generator ──
+function genId() { return 'dl-' + (++nextId); }
+
+// ── Helpers ──
+function formatDuration(seconds) {
+  if (!seconds) return '';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function shortenPath(p) {
+  if (!p) return '';
+  const parts = p.replace(/\\/g, '/').split('/');
+  if (parts.length <= 3) return p;
+  return parts[0] + '/.../' + parts.slice(-2).join('/');
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Item/History conversion ──
+function historyToItem(h) {
+  return {
+    id: h.id, url: h.url,
+    status: h.status, info: h.title ? { title: h.title, thumbnail: h.thumbnail, duration: h.duration, formats: h.formats } : null,
+    selectedFormat: h.selectedFormat, progress: null, error: h.error, filePath: h.filePath,
+  };
+}
+
+function itemToHistory(item) {
+  return {
+    id: item.id, url: item.url,
+    title: (item.info && item.info.title) || '',
+    thumbnail: (item.info && item.info.thumbnail) || '',
+    duration: (item.info && item.info.duration) || 0,
+    selectedFormat: item.selectedFormat,
+    formats: (item.info && item.info.formats) || [],
+    status: item.status === 'fetching' ? 'ready' : item.status,
+    filePath: item.filePath, createdAt: Date.now(), error: item.error,
+  };
+}
+
+// ── Settings persistence ──
+function loadSettingsLocal() {
+  const mc = localStorage.getItem('yt-fetcher-max-concurrent');
+  const sp = localStorage.getItem('yt-fetcher-save-path');
+  state.maxConcurrent = mc ? parseInt(mc, 10) || 1 : 1;
+  state.savePath = sp || '';
+}
+function saveSettingsLocal() {
+  localStorage.setItem('yt-fetcher-max-concurrent', String(state.maxConcurrent));
+  localStorage.setItem('yt-fetcher-save-path', state.savePath);
+}
+
+// ── History save (debounced) ──
+function scheduleHistorySave() {
+  if (historyTimer) clearTimeout(historyTimer);
+  historyTimer = setTimeout(() => {
+    if (!API()) return;
+    const toSave = state.items.filter(i => i.status !== 'fetching');
+    toSave.forEach(item => API().history_save(itemToHistory(item)));
+  }, 2000);
+}
+
+// ── Queue processing ──
+function processQueue() {
+  const active = state.items.filter(i => i.status === 'downloading').length;
+  if (active >= state.maxConcurrent) return;
+  const readyWaiting = state.items.filter(i => i.status === 'ready');
+  const slotsAvailable = state.maxConcurrent - active;
+  if (slotsAvailable <= 0 || readyWaiting.length === 0) return;
+  const toStart = readyWaiting.slice(0, slotsAvailable);
+  toStart.forEach(item => {
+    const idx = state.items.findIndex(i => i.id === item.id);
+    if (idx !== -1) {
+      state.items[idx] = { ...state.items[idx], status: 'downloading', progress: { percent: 0, speed: null, eta: null }, error: null };
+    }
+  });
+  render();
+  toStart.forEach(item => triggerDownload(item.id));
+}
+
+// ── Download trigger ──
+function triggerDownload(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item || !item.info) return;
+  API().start_download(id, item.url, item.selectedFormat, item.info.title, state.savePath);
+}
+
+// ── Actions ──
+async function handleFetch() {
+  const url = state.url.trim();
+  if (!url) return;
+  const id = genId();
+  state.items.unshift({ id, url, status: 'fetching', info: null, selectedFormat: 'best', progress: null, error: null, filePath: null });
+  state.url = '';
+  render();
+  try {
+    const info = await API().fetch_info(url);
+    const item = state.items.find(i => i.id === id);
+    if (item) {
+      item.status = 'ready';
+      item.info = info;
+      item.selectedFormat = (info.formats[0] && info.formats[0].formatId) || 'best';
+    }
+  } catch (e) {
+    const item = state.items.find(i => i.id === id);
+    if (item) { item.status = 'error'; item.error = (e.message || e) || 'Failed to fetch video'; }
+  }
+  render();
+}
+
+function handleDownload(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item || item.status !== 'ready') return;
+  item.status = 'downloading';
+  item.progress = { percent: 0, speed: null, eta: null };
+  item.error = null;
+  render();
+  triggerDownload(id);
+}
+
+function handleResume(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item || !item.info) return;
+  item.status = 'downloading';
+  item.progress = { percent: 0, speed: null, eta: null };
+  item.error = null;
+  render();
+  triggerDownload(id);
+}
+
+function handleCancel(id) {
+  API().cancel_download(id);
+  const item = state.items.find(i => i.id === id);
+  if (item) { item.status = 'paused'; item.progress = null; }
+  processQueue();
+  render();
+}
+
+function handleDismiss(id) {
+  state.items = state.items.filter(i => i.id !== id);
+  API().history_delete(id);
+  render();
+}
+
+function handleDeleteFile(id, filePath) {
+  if (filePath) API().delete_file(filePath);
+  state.items = state.items.filter(i => i.id !== id);
+  API().history_delete(id);
+  render();
+}
+
+function handleClearHistory() {
+  state.items = state.items.filter(i => !['completed', 'error'].includes(i.status));
+  API().history_clear();
+  render();
+}
+
+function handleDownloadAll() {
+  processQueue();
+}
+
+function handleSelectFormat(id, formatId) {
+  const item = state.items.find(i => i.id === id);
+  if (item) { item.selectedFormat = formatId; render(); }
+}
+
+async function handleSelectFolder() {
+  const folder = await API().select_folder();
+  if (folder) { state.savePath = folder; saveSettingsLocal(); render(); }
+}
+
+function handleCheckUpdates() { API().check_for_updates(); }
+function handleDownloadUpdate() { API().download_update(); }
+function handleInstallUpdate() { API().install_update(); }
+
+// ── Push event handlers ──
+window.onProgress = function(data) {
+  const item = state.items.find(i => i.id === data.downloadId);
+  if (item) {
+    item.progress = { percent: data.percent, speed: data.speed, eta: data.eta };
+    render();
+  }
+};
+
+window.onComplete = function(data) {
+  const item = state.items.find(i => i.id === data.downloadId);
+  if (item) {
+    item.status = 'completed';
+    item.progress = null;
+    if (data.filePath) item.filePath = data.filePath;
+  }
+  processQueue();
+  render();
+};
+
+window.onError = function(data) {
+  const item = state.items.find(i => i.id === data.downloadId);
+  if (item) {
+    item.status = 'error';
+    item.progress = null;
+    item.error = data.message;
+  }
+  processQueue();
+  render();
+};
+
+window.onDestination = function(data) {
+  const item = state.items.find(i => i.id === data.downloadId);
+  if (item && data.filePath) {
+    item.filePath = data.filePath;
+  }
+};
+
+window.onLog = function(data) {
+  // log lines available for debugging; not shown in UI
+};
+
+window.onUpdateStatus = function(data) {
+  state.updateStatus = data;
+  render();
+};
+
+// ── Render ──
+function render() {
+  const app = document.getElementById('app');
+  const activeItems = state.items.filter(i => ['fetching','ready','downloading','paused'].includes(i.status));
+  const doneItems = state.items.filter(i => ['completed','error'].includes(i.status));
+  const readyCount = activeItems.filter(i => i.status === 'ready').length;
+  const activeCount = state.items.filter(i => i.status === 'downloading').length;
+
+  const us = state.updateStatus;
+  let updateBtnClass = 'btn btn-header btn-update-idle';
+  let updateBtnText = 'Check Update';
+  let updateBtnAction = handleCheckUpdates;
+  let updateBtnDisabled = false;
+  if (us) {
+    if (us.state === 'available') { updateBtnClass = 'btn btn-header btn-update-available'; updateBtnText = 'Download Update'; updateBtnAction = handleDownloadUpdate; }
+    else if (us.state === 'downloaded') { updateBtnClass = 'btn btn-header btn-update-downloaded'; updateBtnText = 'Restart & Install'; updateBtnAction = handleInstallUpdate; }
+    else if (us.state === 'checking' || us.state === 'downloading') { updateBtnDisabled = true; }
+  }
+
+  let html = `
+    <header>
+      <div class="header-left">
+        <h1 class="app-title">YouTube Fetcher</h1>
+        ${state.appVersion ? '<span class="app-version">v' + escapeHtml(state.appVersion) + '</span>' : ''}
+        <button class="${updateBtnClass}" id="btn-update" ${updateBtnDisabled ? 'disabled' : ''}>${updateBtnText}</button>
+      </div>
+      <div class="header-right">
+        ${activeCount > 0 ? '<span class="active-count">' + activeCount + '/' + state.maxConcurrent + ' downloading</span>' : ''}
+        <div class="settings-wrap">
+          <button class="btn-gear" id="btn-settings" title="Settings">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </button>
+          ${state.showSettings ? renderSettings() : ''}
+        </div>
+        ${readyCount >= 1 ? '<button class="btn btn-green" id="btn-download-all">Download All (' + readyCount + ')</button>' : ''}
+      </div>
+    </header>
+    <main>
+      <form class="url-form" id="url-form">
+        <input type="text" class="url-input" id="url-input" placeholder="Paste YouTube URL here..." value="${escapeHtml(state.url)}" />
+        <button type="submit" class="btn btn-red btn-fetch" ${!state.url.trim() ? 'disabled' : ''}>Fetch</button>
+      </form>
+      <div class="download-list">
+        ${activeItems.map(renderDownloadRow).join('')}
+      </div>
+      ${doneItems.length > 0 ? renderHistory(doneItems) : ''}
+      ${state.items.length === 0 && state.historyLoaded ? renderEmptyState() : ''}
+    </main>`;
+
+  app.innerHTML = html;
+  bindEvents();
+}
+
+function renderSettings() {
+  const us = state.updateStatus;
+  let updateMsg = 'Checking for updates...';
+  if (us) {
+    if (us.state === 'idle') updateMsg = 'Checking for updates...';
+    else if (us.state === 'downloading') updateMsg = us.message;
+    else if (us.state === 'available') updateMsg = us.message;
+    else if (us.state === 'downloaded') updateMsg = us.message + ' - restart to install';
+    else if (us.state === 'error') updateMsg = us.message;
+    else if (us.state === 'checking') updateMsg = 'Checking for updates...';
+    else if (us.state === 'not-available') updateMsg = 'You are up to date';
+  }
+
+  return `<div class="settings-panel" id="settings-panel">
+    <label class="settings-label">Max parallel downloads</label>
+    <div class="settings-slider-row">
+      <input type="range" class="settings-slider" id="settings-slider" min="1" max="10" value="${state.maxConcurrent}" />
+      <span class="settings-slider-val">${state.maxConcurrent}</span>
+    </div>
+    <p class="settings-hint">${state.maxConcurrent === 1 ? 'Downloads run one at a time (queued)' : 'Up to ' + state.maxConcurrent + ' downloads run simultaneously'}</p>
+    <label class="settings-label">Save videos to</label>
+    <div class="settings-path-row">
+      <span class="settings-path" title="${escapeHtml(state.savePath || 'Default (Downloads/YouTube Fetcher)')}">${state.savePath ? escapeHtml(shortenPath(state.savePath)) : 'Default'}</span>
+      <button class="btn btn-gray-sm" id="btn-browse" style="flex-shrink:0;padding:6px 8px;font-size:10px;">Browse</button>
+    </div>
+    ${state.savePath ? '<button class="settings-reset" id="btn-reset-path">Reset to default</button>' : ''}
+    <div class="settings-divider"></div>
+    <div class="settings-updates-header">
+      <span class="settings-label" style="margin-bottom:0">Updates</span>
+      ${state.appVersion ? '<span style="font-size:10px;color:var(--gray-500)">v' + escapeHtml(state.appVersion) + '</span>' : ''}
+    </div>
+    <div class="settings-update-status">${escapeHtml(updateMsg)}</div>
+    ${us && us.state === 'downloading' ? '<div class="settings-update-progress"><div class="settings-update-progress-fill" style="width:' + (us.percent || 0) + '%"></div></div>' : ''}
+    <div class="settings-update-btns">
+      ${us && us.state === 'available' ? '<button class="btn btn-red" id="btn-dl-update-settings" style="font-size:10px;padding:4px 8px">Download Update</button>' : ''}
+      ${us && us.state === 'downloaded' ? '<button class="btn btn-green" id="btn-install-update-settings" style="font-size:10px;padding:4px 8px">Restart & Install</button>' : ''}
+      ${us && us.state !== 'checking' && us.state !== 'downloading' ? '<button class="btn btn-gray-sm" id="btn-check-update-settings" style="font-size:10px;padding:4px 8px">Check for updates</button>' : ''}
+    </div>
+  </div>`;
+}
+
+function renderDownloadRow(item) {
+  const isFetching = item.status === 'fetching';
+  const isDownloading = item.status === 'downloading';
+  const isCompleted = item.status === 'completed';
+  const isError = item.status === 'error';
+  const isReady = item.status === 'ready';
+  const isPaused = item.status === 'paused';
+
+  let rowClass = 'download-row';
+  if (isError) rowClass += ' is-error';
+  else if (isCompleted) rowClass += ' is-completed';
+  else if (isPaused) rowClass += ' is-paused';
+
+  let thumbHtml;
+  if (item.info && item.info.thumbnail) {
+    thumbHtml = `<img class="thumb" src="${escapeHtml(item.info.thumbnail)}" alt="" />`;
+  } else {
+    thumbHtml = `<div class="thumb-placeholder">${isFetching ? '<svg class="spinner" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>' : ''}</div>`;
+  }
+
+  let infoHtml;
+  if (item.info) {
+    const dur = item.info.duration > 0 ? '<span class="row-duration">' + formatDuration(item.info.duration) + '</span>' : '';
+    infoHtml = `<div class="row-info"><div class="info-line"><span class="yt-badge">YT</span><span class="row-title" title="${escapeHtml(item.info.title)}">${escapeHtml(item.info.title)}</span>${dur}</div></div>`;
+  } else {
+    infoHtml = `<div class="row-info"><div class="info-line"><span class="yt-badge">YT</span><span class="row-url">${escapeHtml(item.url)}</span></div></div>`;
+  }
+
+  let formatHtml = '';
+  if ((isReady || isPaused) && item.info) {
+    const opts = item.info.formats.map(f => '<option value="' + escapeHtml(f.formatId) + '"' + (f.formatId === item.selectedFormat ? ' selected' : '') + '>' + escapeHtml(f.label) + '</option>').join('');
+    formatHtml = '<select class="format-select" data-action="select-format" data-id="' + item.id + '">' + opts + '</select>';
+  }
+
+  let actionHtml = '';
+  if (isReady) {
+    actionHtml = '<button class="btn btn-green" data-action="download" data-id="' + item.id + '" style="padding:6px 12px;font-size:12px;flex-shrink:0">Download</button>';
+  } else if (isPaused) {
+    actionHtml = '<button class="btn btn-blue" data-action="resume" data-id="' + item.id + '" style="padding:6px 12px;font-size:12px;flex-shrink:0">Resume</button>';
+  } else if (isDownloading && item.progress) {
+    const pct = item.progress.percent.toFixed(1);
+    const spd = item.progress.speed || '';
+    actionHtml = `<div class="progress-section">
+      <div class="progress-bar-wrap">
+        <div class="progress-texts"><span>${pct}%</span><span class="progress-speed">${escapeHtml(spd)}</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:${Math.min(item.progress.percent, 100)}%"></div></div>
+      </div>
+      <button class="btn btn-gray-sm btn-pause" data-action="cancel" data-id="${item.id}" title="Pause download">Pause</button>
+    </div>`;
+  } else if (isCompleted) {
+    actionHtml = '<span class="status-done">Done</span>';
+  } else if (isError) {
+    actionHtml = '<span class="status-error" title="' + escapeHtml(item.error || '') + '">' + escapeHtml(item.error || '') + '</span>';
+  }
+
+  let dismissHtml = '';
+  if (isCompleted || isError) {
+    const trashBtn = item.filePath ? '<button class="btn-icon danger" data-action="delete-file" data-id="' + item.id + '" data-path="' + escapeHtml(item.filePath) + '" title="Delete file from disk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>' : '';
+    dismissHtml = `<div class="row-actions">${trashBtn}<button class="btn-icon btn-dismiss" data-action="dismiss" data-id="${item.id}" title="Remove from list">&times;</button></div>`;
+  } else if (isReady || isPaused) {
+    dismissHtml = `<button class="btn-icon btn-dismiss" data-action="dismiss" data-id="${item.id}" title="Remove from queue">&times;</button>`;
+  }
+
+  return `<div class="${rowClass}" data-item-id="${item.id}"><div class="row-inner">${thumbHtml}${infoHtml}${formatHtml}${actionHtml}${dismissHtml}</div></div>`;
+}
+
+function renderHistory(doneItems) {
+  return `<div>
+    <button class="history-header" id="btn-toggle-history">
+      <svg class="history-chevron${state.showHistory ? ' open' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      History (${doneItems.length})
+      <button class="history-clear" id="btn-clear-history">Clear all</button>
+    </button>
+    ${state.showHistory ? '<div class="download-list">' + doneItems.map(renderDownloadRow).join('') + '</div>' : ''}
+  </div>`;
+}
+
+function renderEmptyState() {
+  return `<div class="empty-state">
+    <p class="empty-primary">Paste a YouTube URL above and click Fetch</p>
+    <p class="empty-secondary">Click the input field to auto-paste from clipboard</p>
+  </div>`;
+}
+
+// ── Event binding ──
+function bindEvents() {
+  // URL form
+  const form = document.getElementById('url-form');
+  if (form) {
+    form.addEventListener('submit', e => { e.preventDefault(); handleFetch(); });
+  }
+
+  // URL input
+  const input = document.getElementById('url-input');
+  if (input) {
+    input.addEventListener('input', e => { state.url = e.target.value; updateFetchButton(); });
+    input.addEventListener('focus', async () => {
+      if (!state.url && API()) {
+        try {
+          const text = await API().clipboard_paste();
+          if (text && text.trim()) { state.url = text.trim(); render(); }
+        } catch(e) {}
+      }
+    });
+  }
+
+  // Update button
+  const btnUpdate = document.getElementById('btn-update');
+  if (btnUpdate) btnUpdate.addEventListener('click', () => {
+    const us = state.updateStatus;
+    if (us && us.state === 'available') handleDownloadUpdate();
+    else if (us && us.state === 'downloaded') handleInstallUpdate();
+    else handleCheckUpdates();
+  });
+
+  // Settings toggle
+  const btnSettings = document.getElementById('btn-settings');
+  if (btnSettings) {
+    btnSettings.addEventListener('click', e => { e.stopPropagation(); state.showSettings = !state.showSettings; render(); });
+  }
+
+  // Settings panel events
+  const slider = document.getElementById('settings-slider');
+  if (slider) {
+    slider.addEventListener('input', e => {
+      state.maxConcurrent = parseInt(e.target.value, 10);
+      saveSettingsLocal();
+      render();
+    });
+  }
+
+  const btnBrowse = document.getElementById('btn-browse');
+  if (btnBrowse) btnBrowse.addEventListener('click', handleSelectFolder);
+
+  const btnReset = document.getElementById('btn-reset-path');
+  if (btnReset) btnReset.addEventListener('click', () => { state.savePath = ''; saveSettingsLocal(); render(); });
+
+  const btnCheckUpd = document.getElementById('btn-check-update-settings');
+  if (btnCheckUpd) btnCheckUpd.addEventListener('click', handleCheckUpdates);
+
+  const btnDlUpd = document.getElementById('btn-dl-update-settings');
+  if (btnDlUpd) btnDlUpd.addEventListener('click', handleDownloadUpdate);
+
+  const btnInstUpd = document.getElementById('btn-install-update-settings');
+  if (btnInstUpd) btnInstUpd.addEventListener('click', handleInstallUpdate);
+
+  // Download All
+  const btnDownloadAll = document.getElementById('btn-download-all');
+  if (btnDownloadAll) btnDownloadAll.addEventListener('click', handleDownloadAll);
+
+  // History toggle
+  const btnToggleHistory = document.getElementById('btn-toggle-history');
+  if (btnToggleHistory) {
+    btnToggleHistory.addEventListener('click', e => {
+      if (e.target.closest('.history-clear')) return;
+      state.showHistory = !state.showHistory;
+      render();
+    });
+  }
+
+  const btnClearHistory = document.getElementById('btn-clear-history');
+  if (btnClearHistory) btnClearHistory.addEventListener('click', e => { e.stopPropagation(); handleClearHistory(); });
+
+}
+
+// Delegated events — registered once globally
+let _delegatedBound = false;
+function bindDelegatedEvents() {
+  if (_delegatedBound) return;
+  _delegatedBound = true;
+  document.addEventListener('click', handleRowClick);
+  document.addEventListener('change', handleRowChange);
+}
+
+function handleRowClick(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  e.stopPropagation();
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
+  if (action === 'download') handleDownload(id);
+  else if (action === 'resume') handleResume(id);
+  else if (action === 'cancel') handleCancel(id);
+  else if (action === 'dismiss') handleDismiss(id);
+  else if (action === 'delete-file') handleDeleteFile(id, btn.dataset.path);
+}
+
+function handleRowChange(e) {
+  const sel = e.target.closest('[data-action="select-format"]');
+  if (!sel) return;
+  handleSelectFormat(sel.dataset.id, sel.value);
+}
+
+function updateFetchButton() {
+  const btn = document.querySelector('.btn-fetch');
+  if (btn) btn.disabled = !state.url.trim();
+}
+
+// ── Settings panel outside click ──
+document.addEventListener('mousedown', e => {
+  if (!state.showSettings) return;
+  if (e.target.closest('#settings-panel') || e.target.closest('#btn-settings')) return;
+  state.showSettings = false;
+  render();
+});
+
+// ── Init ──
+async function init() {
+  bindDelegatedEvents();
+  loadSettingsLocal();
+  render();
+  if (API()) {
+    try {
+      const entries = await API().history_load();
+      state.items = entries.map(historyToItem);
+      state.historyLoaded = true;
+      render();
+    } catch(e) { state.historyLoaded = true; render(); }
+
+    try {
+      const v = await API().get_app_version();
+      state.appVersion = v;
+      render();
+    } catch(e) {}
+
+    API().check_for_updates();
+  } else {
+    state.historyLoaded = true;
+    render();
+  }
+}
+
+// pywebview ready event
+window.addEventListener('pywebviewready', init);
+// fallback if already ready
+if (window.pywebview) init();
+</script>
+</body>
 </html>

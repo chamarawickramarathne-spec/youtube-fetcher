@@ -1,11 +1,14 @@
-node_modules/
-out/
-release/
+__pycache__/
+*.pyc
+*.pyo
+build/
 dist/
-dist-electron/
-*.tsbuildinfo
+release/
+*.spec.bak
 resources/yt-dlp.exe
 resources/ffmpeg.exe
-Youtube Fetcher Sell/
 *.log
 .DS_Store
+*.egg-info/
+.venv/
+venv/
