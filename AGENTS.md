@@ -37,6 +37,7 @@
 | 5   | 1.0.0   | 2026-08-08 | Fixed broken npm, rebuilt installer. |
 | 6   | 1.0.1   | 2026-08-08 | Released v1.0.1, published to GitHub with electron-updater. |
 | 7   | 2.0.0   | 2026-08-18 | **Full rewrite**: Electron+React -> Python+pywebview+vanilla JS. Single-file frontend (`index.html`). PyInstaller single .exe. Inno Setup installer. Same UI/UX, all features preserved. Installer size: ~83 MB (was ~450 MB). |
+| 8   | 2.0.1   | 2026-08-18 | Fixed Settings > Browse button opening file picker instead of folder picker (dialog type 0 -> 20). |
 
 ## Update Feature
 - Publish provider: GitHub (`chamarawickramarathne-spec/youtube-fetcher`).

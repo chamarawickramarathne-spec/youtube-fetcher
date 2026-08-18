@@ -105,7 +105,7 @@ class Backend:
         self._update_state: dict = {
             "state": "idle", "version": "", "percent": 0, "message": ""
         }
-        self._app_version = "2.0.0"
+        self._app_version = "2.0.1"
         os.makedirs(get_user_data_dir(), exist_ok=True)
         self._load_cookie_config()
 
@@ -487,7 +487,7 @@ class Backend:
             return None
         try:
             result = self._window.create_file_dialog(
-                0,  # FOLDER_DIALOG
+                20,  # FOLDER_DIALOG
                 allow_multiple=False,
             )
             if result and len(result) > 0:
