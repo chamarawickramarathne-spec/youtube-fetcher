@@ -111,7 +111,7 @@ class UpdateManager:
                     None,
                 )
                 if setup_asset:
-                    checksum = _extract_checksum(data)
+                    checksum = _extract_checksum(data, arch_suffix)
                     with self._lock:
                         self._state = {
                             **self._state,
@@ -246,9 +246,9 @@ def _sha256_file(path: str) -> str:
     return h.hexdigest()
 
 
-def _extract_checksum(release_data: dict) -> str:
+def _extract_checksum(release_data: dict, arch_suffix: str) -> str:
     body = release_data.get("body", "")
-    m = re.search(r"sha256[:\s]+([a-fA-F0-9]{64})", body)
+    m = re.search(rf"sha256[- ]?{re.escape(arch_suffix)}[: ]+([a-fA-F0-9]{{64}})", body)
     if m:
         return m.group(1)
     return ""
