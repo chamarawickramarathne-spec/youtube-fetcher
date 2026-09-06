@@ -214,6 +214,23 @@ main { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px;
 .settings-update-progress { height: 4px; background: var(--gray-700); border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
 .settings-update-progress-fill { height: 4px; background: var(--red-500); border-radius: 2px; transition: width 0.3s; }
 .settings-update-btns { display: flex; gap: 8px; }
+
+/* ── Consent modal (C4) ── */
+.consent-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; animation: fadeIn 0.15s;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.consent-modal {
+  background: var(--gray-800); border: 1px solid var(--gray-600);
+  border-radius: 12px; padding: 24px; max-width: 400px; width: 90%;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+}
+.consent-title { font-size: 16px; font-weight: 600; color: var(--white); margin-bottom: 8px; }
+.consent-body { font-size: 13px; color: var(--gray-300); line-height: 1.5; margin-bottom: 16px; }
+.consent-warning { font-size: 11px; color: var(--gray-500); margin-bottom: 16px; }
+.consent-btns { display: flex; gap: 8px; justify-content: flex-end; }
 </style>
 </head>
 <body>
@@ -231,6 +248,8 @@ const state = {
   updateStatus: null,
   appVersion: '',
   historyLoaded: false,
+  showConsent: false,
+  consentResolve: null,
 };
 let nextId = 0;
 let historyTimer = null;
@@ -257,9 +276,13 @@ function shortenPath(p) {
 }
 
 function escapeHtml(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
+  if (!s) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 }
 
 // ── Item/History conversion ──
@@ -340,6 +363,13 @@ async function handleFetch() {
   state.url = '';
   render();
   try {
+    const consent = await showConsentDialog();
+    if (!consent) {
+      const item = state.items.find(i => i.id === id);
+      if (item) { item.status = 'error'; item.error = 'Cookie access denied'; }
+      render();
+      return;
+    }
     const info = await API().fetch_info(url);
     const item = state.items.find(i => i.id === id);
     if (item) {
@@ -513,7 +543,8 @@ function render() {
       </div>
       ${doneItems.length > 0 ? renderHistory(doneItems) : ''}
       ${state.items.length === 0 && state.historyLoaded ? renderEmptyState() : ''}
-    </main>`;
+    </main>
+    ${state.showConsent ? renderConsentModal() : ''}`;
 
   app.innerHTML = html;
   bindEvents();
@@ -644,6 +675,43 @@ function renderEmptyState() {
   </div>`;
 }
 
+// ── Cookie consent modal (C4) ──
+function renderConsentModal() {
+  return `<div class="consent-overlay" id="consent-overlay">
+    <div class="consent-modal">
+      <p class="consent-title">Browser Cookie Access</p>
+      <p class="consent-body">
+        YouTube requires sign-in to view this video. To proceed, the app needs
+        to read your browser cookies (Edge, Chrome, Firefox, etc.) to
+        authenticate with YouTube on your behalf.
+      </p>
+      <p class="consent-warning">
+        Cookies are only sent to YouTube. They are never stored or shared with third parties.
+      </p>
+      <div class="consent-btns">
+        <button class="btn btn-gray" id="consent-deny">Deny</button>
+        <button class="btn btn-red" id="consent-allow">Allow</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function showConsentDialog() {
+  return new Promise(resolve => {
+    state.showConsent = true;
+    state.consentResolve = resolve;
+    render();
+  });
+}
+
+function resolveConsent(allowed) {
+  state.showConsent = false;
+  const resolve = state.consentResolve;
+  state.consentResolve = null;
+  render();
+  if (resolve) resolve(allowed);
+}
+
 // ── Event binding ──
 function bindEvents() {
   // URL form
@@ -723,6 +791,17 @@ function bindEvents() {
   const btnClearHistory = document.getElementById('btn-clear-history');
   if (btnClearHistory) btnClearHistory.addEventListener('click', e => { e.stopPropagation(); handleClearHistory(); });
 
+  // Consent modal events (C4)
+  const consentOverlay = document.getElementById('consent-overlay');
+  if (consentOverlay) {
+    consentOverlay.addEventListener('click', e => {
+      if (e.target === consentOverlay) resolveConsent(false);
+    });
+  }
+  const consentAllow = document.getElementById('consent-allow');
+  if (consentAllow) consentAllow.addEventListener('click', () => resolveConsent(true));
+  const consentDeny = document.getElementById('consent-deny');
+  if (consentDeny) consentDeny.addEventListener('click', () => resolveConsent(false));
 }
 
 // Delegated events — registered once globally

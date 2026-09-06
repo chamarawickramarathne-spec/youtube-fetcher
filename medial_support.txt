@@ -2,17 +2,19 @@
 YouTube Fetcher
 
 2. Short Description
-A fast, clean YouTube video downloader for Windows. Paste a link, pick a quality, and download videos as MP4 or audio as MP3 - all from one simple screen.
+A fast, clean YouTube video downloader for Windows. Paste a link, pick a quality, and download videos as MP4 or audio as MP3 - all from one simple screen. Available for both 32-bit and 64-bit Windows.
 
 3. Long Description
 YouTube Fetcher is a lightweight desktop app for Windows that makes downloading YouTube videos and audio effortless. Just paste a video link and the app instantly fetches the available qualities. Choose from Best Quality (merged video+audio), 720p, 1080p, or Audio Only (MP3), and the download starts automatically - with live progress, speed, and ETA shown right on the screen.
 
 Built with a clean, dark interface, YouTube Fetcher supports multiple parallel downloads, a persistent download history, a custom save folder, and smart auto-paste from your clipboard. Behind the scenes it uses yt-dlp, so it stays reliable even as YouTube changes. The app also includes a built-in auto-update system - the version is shown right next to the app name and a one-click update button keeps you on the latest release at all times.
 
-Now rebuilt in Python for a tiny footprint - the entire installer is just 83 MB (down from 450 MB). Same features, same look, dramatically smaller download.
+Version 2.1.0 adds a major security hardening and a full dual-architecture build. Both 32-bit (x86) and 64-bit (x64) Windows installers are provided, and the update system automatically selects the correct installer for your system. Every update download is verified with a SHA-256 checksum, TLS certificate verification is enforced, YouTube URLs are validated before download, browser cookie retrieval now requires your explicit consent, and file handling has been hardened against path-traversal and data-corruption attacks.
+
+Originally rebuilt in Python for a tiny footprint - the entire installer is just 83-93 MB (down from 450 MB). Same features, same look, dramatically smaller download.
 
 4. Facebook Post Text
-Download YouTube videos on Windows with zero fuss. Paste the link, pick your quality, and YouTube Fetcher does the rest - MP4 video or MP3 audio, parallel downloads, download history, and a clean dark UI. Now rebuilt in Python with a tiny 83 MB installer (down from 450 MB). The current version sits right next to the app name, and a built-in one-click updater keeps you on the newest release automatically. Free to use and super fast. Try it now!
+Download YouTube videos on Windows with zero fuss. Paste the link, pick your quality, and YouTube Fetcher does the rest - MP4 video or MP3 audio, parallel downloads, download history, and a clean dark UI. The new 2.1.0 update adds hardened security: SHA-256-verified auto-updates, validated URLs, and explicit consent before browser cookie access. Now available for both 64-bit and 32-bit Windows, with an auto-updater that picks the right installer for your system. Built in Python for a tiny footprint, free to use, and super fast. Try it now!
 
 5. 10 Tags
 #YouTubeDownloader #VideoDownloader #WindowsApp #YouTubeFetcher #MP3Downloader #MP4 #DownloadVideos #YTD #TechTools #DesktopApp
@@ -20,9 +22,9 @@ Download YouTube videos on Windows with zero fuss. Paste the link, pick your qua
 6. 5 Image Prompts
 - Prompt 1: Dark-themed desktop app UI with a red URL input bar, a glowing red "Fetch" button, and a YouTube thumbnail card with a green Download button, clean modern flat design.
 - Prompt 2: Split-screen concept - left side shows a laptop with the YouTube Fetcher app open, right side shows an arrow pointing from a video thumbnail into a download folder icon, isometric style, dark background with red accents.
-- Prompt 3: Close-up of the YouTube Fetcher header showing the app name with a small gray "v2.0" version label and a green "Restart & Install" update button beside it, dark glassmorphism panel on a dark gradient background.
-- Prompt 4: A pile of stacked video file cards and music note icons sliding out of a laptop screen into a folder, with a red-to-orange gradient, energetic tech illustration, dark navy background.
-- Prompt 5: Minimalist product hero banner - YouTube Fetcher logo (red play button merging into a download arrow) centered on a dark background, with the tagline "Paste. Pick. Play." in clean white text below.
+- Prompt 3: Close-up of the YouTube Fetcher header showing the app name with a small gray "v2.1.0" version label and a green "Update" button beside it, dark glassmorphism panel on a dark gradient background.
+- Prompt 4: A pile of stacked video file cards and music note icons sliding out of a laptop screen into a folder, with a red-to-orange gradient and a secure padlock badge representing the verified-update feature, energetic tech illustration, dark navy background.
+- Prompt 5: Minimalist product hero banner - YouTube Fetcher logo (red play button merging into a download arrow) centered on a dark background, with the tagline "Paste. Pick. Play." in clean white text below, and a small 64-bit/32-bit badge.
 
 7. Changelog
 - Mod 1 (v1.0.0, 2026-08-08): Initial release with auto-update feature, GitHub repo chamarawickramarathne-spec/youtube-fetcher.
@@ -32,3 +34,7 @@ Download YouTube videos on Windows with zero fuss. Paste the link, pick your qua
 - Mod 5 (v1.0.0, 2026-08-08): Fixed broken global npm (installed npm 12.0.2) and rebuilt the installer - youtube-fetcher-1.0.0-setup.exe.
 - Mod 6 (v1.0.1, 2026-08-08): Released v1.0.1 with header version display and unified update button; installer youtube-fetcher-1.0.1-setup.exe published to GitHub.
 - Mod 7 (v2.0.0, 2026-08-18): Full rewrite from Electron+React to Python+pywebview+vanilla JS. Same UI/UX, all features preserved. Installer shrunk from 450 MB to 83 MB. Single-file frontend, PyInstaller .exe, Inno Setup installer.
+- Mod 8 (v2.0.1, 2026-08-18): Fixed Settings > Browse button opening the file picker instead of the folder picker (dialog type 0 -> 20).
+- Mod 9 (v2.1.0, 2026-09-06): Security audit + dual-architecture build. Modular backend (5 modules). SHA-256 update verification, TLS cert validation, cookie consent dialog, YouTube URL validation, atomic JSON writes, path-traversal prevention, rate limiting, thread-safe update state, JS injection prevention, binary hash verification, zip-slip fix, plus domain-relevant minor bug and environment fixes. Dual-architecture builds (x64 + x86) with architecture-specific installers and auto-updater.
+
+(End of file)

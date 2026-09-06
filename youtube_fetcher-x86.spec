@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+# PyInstaller spec — x86 (32-bit x86)
 
 a = Analysis(
     ['main.py'],
@@ -11,7 +12,7 @@ a = Analysis(
         ('index.html', '.'),
         ('media/icon.ico', 'media'),
     ],
-    hiddenimports=[],
+    hiddenimports=['storage', 'ytdlp_runner', 'updater', 'downloader'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -37,7 +38,7 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch=None,
+    target_arch='x86',
     codesign_identity=None,
     entitlements_file=None,
     icon='media/icon.ico',

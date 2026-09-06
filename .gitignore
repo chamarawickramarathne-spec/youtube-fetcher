@@ -2,7 +2,11 @@ __pycache__/
 *.pyc
 *.pyo
 build/
+build-x64/
+build-x86/
 dist/
+dist-x64/
+dist-x86/
 release/
 *.spec.bak
 resources/yt-dlp.exe
