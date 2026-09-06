@@ -38,9 +38,11 @@
   release/x86/youtube-fetcher-setup-x86.exe
   ```
 - Update feature: checks GitHub API, downloads arch-specific `-setup-x64.exe` or `-setup-x86.exe`, verifies SHA-256 checksum, launches installer
+- Release notes format for checksums: body must contain `sha256 x64: <hex>` and `sha256 x86: <hex>` lines (app parses the one matching its architecture)
 
 ## Security Features (Mod 9)
 - SHA-256 checksum verification on auto-update downloads (hard-fails if no checksum is listed — no silent fallback)
+- Architecture-aware checksum parsing (release body `sha256 x64: <hex>` / `sha256 x86: <hex>` resolved per running architecture)
 - TLS certificate verification enabled (removed `--no-check-certificates`)
 - YouTube URL validation (only youtube.com/youtu.be URLs accepted)
 - Cookie access consent dialog before browser cookie extraction
