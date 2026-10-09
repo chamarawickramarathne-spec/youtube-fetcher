@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import urllib.parse
@@ -22,6 +23,9 @@ _YT_DOMAINS = {
     "youtube.com", "www.youtube.com", "m.youtube.com",
     "youtu.be", "music.youtube.com",
 }
+
+# Raised when a video needs browser cookies but the user has not granted access.
+COOKIE_CONSENT_REQUIRED = "COOKIE_CONSENT_REQUIRED"
 
 
 # ── URL validation (H1) ──
@@ -67,14 +71,45 @@ def get_ffmpeg_dir() -> str:
     return ""
 
 
+def get_resources_dir() -> str:
+    if getattr(sys, "frozen", False):
+        return os.path.join(sys._MEIPASS, "resources")
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
+
+
+def get_js_runtime_args() -> list[str]:
+    """Resolve the best JS runtime for yt-dlp's YouTube challenge solving.
+
+    Preference: bundled QuickJS-ng (arch-matched) > system deno > system node.
+    Returns CLI args like ['--js-runtimes', 'quickjs:/path/qjs-x64.exe'] or [].
+    """
+    resources = get_resources_dir()
+    qjs_name = "qjs-x64.exe" if sys.maxsize > (2 ** 32) else "qjs-x86.exe"
+    qjs_path = os.path.join(resources, qjs_name)
+    if os.path.exists(qjs_path):
+        return ["--js-runtimes", f"quickjs:{qjs_path}"]
+    for runtime in ("deno", "node"):
+        exe = shutil.which(runtime)
+        if exe:
+            return ["--js-runtimes", f"{runtime}:{exe}"]
+    return []
+
+
+def has_js_runtime() -> bool:
+    return bool(get_js_runtime_args())
+
+
 # ── Single yt-dlp run (C2: removed --no-check-certificates) ──
 
 def run_ytdlp_once(url: str, extra_args: list[str] | None = None) -> dict:
     args = [
         get_ytdlp_path(),
         "--dump-single-json", "--no-download", "--no-warnings",
-        "--no-playlist", "--js-runtimes", "node",
+        "--no-playlist",
     ]
+    js_args = get_js_runtime_args()
+    if js_args:
+        args.extend(js_args)
     if extra_args:
         args.extend(extra_args)
     args.append(url)
@@ -116,8 +151,9 @@ def is_bot_detection(error: str | None) -> bool:
 
 # ── Multi-strategy fetch with cookie bypass ──
 
-def fetch_json(url: str, working_cookie_browser: str | None) -> tuple[dict, str | None]:
-    if working_cookie_browser not in (None, ""):
+def fetch_json(url: str, working_cookie_browser: str | None,
+               allow_cookies: bool = True) -> tuple[dict, str | None]:
+    if allow_cookies and working_cookie_browser not in (None, ""):
         result = run_ytdlp_once(url, ["--cookies-from-browser", working_cookie_browser])
         if result["success"]:
             return result["data"], working_cookie_browser
@@ -133,6 +169,11 @@ def fetch_json(url: str, working_cookie_browser: str | None) -> tuple[dict, str 
             result = run_ytdlp_once(url, bypass_args)
             if result["success"]:
                 return result["data"], ""
+
+    if not allow_cookies:
+        if has_bot:
+            raise Exception(COOKIE_CONSENT_REQUIRED)
+        raise Exception(no_cookie.get("error") or "yt-dlp failed to fetch video info")
 
     results = {}
     with ThreadPoolExecutor(max_workers=len(COOKIE_BROWSERS)) as ex:

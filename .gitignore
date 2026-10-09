@@ -11,6 +11,8 @@ release/
 *.spec.bak
 resources/yt-dlp.exe
 resources/ffmpeg.exe
+resources/qjs-x64.exe
+resources/qjs-x86.exe
 *.log
 .DS_Store
 *.egg-info/

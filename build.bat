@@ -23,6 +23,7 @@ if not exist "%PY32%" (
 REM ── Inno Setup path ──
 set "ISCC=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 if not exist "%ISCC%" set "ISCC=C:\Program Files\Inno Setup 6\ISCC.exe"
+if not exist "%ISCC%" set "ISCC=E:\AIprojects\AI Agent\InnoSetup\ISCC.exe"
 
 REM ========================================
 REM  Step 1: Install dependencies (both Pythons)

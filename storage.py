@@ -153,7 +153,7 @@ def history_clear() -> None:
 # ── Settings ──
 
 def load_settings() -> dict:
-    return load_json(_settings_path(), {"max_concurrent": 1, "save_path": ""})
+    return load_json(_settings_path(), {"max_concurrent": 1, "save_path": "", "allow_cookies": False})
 
 
 def save_settings(settings: dict) -> None:

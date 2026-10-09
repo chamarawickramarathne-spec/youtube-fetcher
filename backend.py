@@ -10,7 +10,10 @@ from storage import (
     history_clear, load_settings, save_settings, load_cookie_config,
     save_cookie_config, shorten_path,
 )
-from ytdlp_runner import is_valid_youtube_url, fetch_json, extract_formats
+from ytdlp_runner import (
+    is_valid_youtube_url, fetch_json, extract_formats,
+    has_js_runtime, COOKIE_CONSENT_REQUIRED,
+)
 from updater import UpdateManager
 from downloader import DownloadManager
 
@@ -19,6 +22,7 @@ class Backend:
     def __init__(self, window=None):
         self._window = window
         self._working_cookie_browser: str | None = self._load_cookie_browser()
+        self._allow_cookies: bool = bool(load_settings().get("allow_cookies", False))
 
         self._update = UpdateManager(get_user_data_dir())
         self._update.set_push(self._push_event)
@@ -61,8 +65,10 @@ class Backend:
         if not is_valid_youtube_url(url):
             raise Exception("Invalid URL — only YouTube URLs are supported")
 
-        data, cookie_browser = fetch_json(url, self._working_cookie_browser)
-        if cookie_browser is not None and cookie_browser != self._working_cookie_browser:
+        data, cookie_browser = fetch_json(
+            url, self._working_cookie_browser, self._allow_cookies,
+        )
+        if cookie_browser and cookie_browser != self._working_cookie_browser:
             self._save_cookie_browser(cookie_browser)
 
         formats = extract_formats(data)
@@ -102,15 +108,28 @@ class Backend:
         return load_settings()
 
     def save_settings(self, settings: dict) -> None:
-        allowed = {"max_concurrent": int, "save_path": str}
-        cleaned = {}
-        for k, t in allowed.items():
-            if k in settings:
-                try:
-                    cleaned[k] = t(settings[k])
-                except (ValueError, TypeError):
-                    pass
+        cleaned = dict(load_settings())
+        if "max_concurrent" in settings:
+            try:
+                cleaned["max_concurrent"] = max(1, min(10, int(settings["max_concurrent"])))
+            except (ValueError, TypeError):
+                pass
+        if "save_path" in settings:
+            cleaned["save_path"] = str(settings["save_path"])
+        if "allow_cookies" in settings:
+            cleaned["allow_cookies"] = bool(settings["allow_cookies"])
         save_settings(cleaned)
+        self._allow_cookies = bool(cleaned.get("allow_cookies", False))
+
+    def grant_cookie_access(self, persist: bool) -> None:
+        self._allow_cookies = True
+        if persist:
+            current = dict(load_settings())
+            current["allow_cookies"] = True
+            save_settings(current)
+
+    def get_runtime_status(self) -> dict:
+        return {"hasJsRuntime": has_js_runtime()}
 
     def select_folder(self) -> str | None:
         if not self._window:
@@ -131,7 +150,7 @@ class Backend:
             return ""
 
     def get_app_version(self) -> str:
-        return "2.1.0"
+        return "2.1.1"
 
     # ── Update API ──
 

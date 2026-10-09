@@ -7,6 +7,7 @@ a = Analysis(
     binaries=[
         ('resources/yt-dlp.exe', 'resources'),
         ('resources/ffmpeg.exe', 'resources'),
+        ('resources/qjs-x64.exe', 'resources'),
     ],
     datas=[
         ('index.html', '.'),

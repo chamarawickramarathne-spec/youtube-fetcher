@@ -7,10 +7,10 @@ import threading
 import time
 
 from storage import (
-    get_user_data_dir, safe_delete_file, sanitize_filename,
-    get_unique_filename, is_path_within,
+    get_user_data_dir, load_settings, safe_delete_file, sanitize_filename,
+    get_unique_filename,
 )
-from ytdlp_runner import get_ytdlp_path, get_ffmpeg_dir
+from ytdlp_runner import get_ytdlp_path, get_ffmpeg_dir, get_js_runtime_args
 
 
 DOWNLOAD_TIMEOUT = 600
@@ -26,6 +26,7 @@ class DownloadManager:
         self._cancel_flags: dict[str, bool] = {}
         self._lock = threading.Lock()
         self._push_fn = None
+        self._output_dirs: set[str] = set()
 
     def set_push(self, push_fn) -> None:
         self._push_fn = push_fn
@@ -76,25 +77,43 @@ class DownloadManager:
 
     def delete_file(self, file_path: str) -> bool:
         allowed = [DOWNLOADS_ROOT, get_user_data_dir()]
+        with self._lock:
+            allowed.extend(self._output_dirs)
+        saved = load_settings().get("save_path") or ""
+        if saved:
+            allowed.append(saved)
         return safe_delete_file(file_path, allowed)
 
     # ── Private ──
 
     def _get_downloads_dir(self, output_dir: str = "") -> str:
+        """Resolve the download directory.
+
+        The user selects the folder through the native picker, so any absolute
+        path (any drive / UNC) is honored. No silent fallback: invalid paths
+        raise, and the caller reports the error to the UI.
+        """
         if output_dir:
-            real = os.path.realpath(output_dir)
-            if not is_path_within(real, DOWNLOADS_ROOT):
-                if not is_path_within(real, get_user_data_dir()):
-                    if not is_path_within(real, os.path.expanduser("~")):
-                        return DOWNLOADS_ROOT
-            return output_dir
+            expanded = os.path.expandvars(os.path.expanduser(output_dir))
+            if not os.path.isabs(expanded):
+                raise ValueError(f"Invalid download folder: {output_dir}")
+            return os.path.normpath(expanded)
         return DOWNLOADS_ROOT
 
     def _execute(self, download_id: str, url: str, format_id: str,
                  title: str, output_dir: str, cookie_browser: str | None,
                  attempt: int = 0) -> None:
-        downloads_dir = self._get_downloads_dir(output_dir)
-        os.makedirs(downloads_dir, exist_ok=True)
+        try:
+            downloads_dir = self._get_downloads_dir(output_dir)
+            os.makedirs(downloads_dir, exist_ok=True)
+        except (ValueError, OSError) as e:
+            self._emit("onError", {
+                "downloadId": download_id,
+                "message": f"Cannot use download folder: {e}",
+            })
+            return
+        with self._lock:
+            self._output_dirs.add(os.path.realpath(downloads_dir))
 
         ytdlp = get_ytdlp_path()
         ffmpeg_dir = get_ffmpeg_dir()
@@ -126,11 +145,12 @@ class DownloadManager:
         args.extend([
             "-o", out_path,
             "--newline", "--progress", "--no-warnings",
-            "--no-playlist", "--js-runtimes", "node",
+            "--no-playlist",
             "--concurrent-fragments", "8",
             "--socket-timeout", "30",
             "--http-chunk-size", "10485760",
         ])
+        args.extend(get_js_runtime_args())
 
         if ffmpeg_dir:
             args.extend(["--ffmpeg-location", ffmpeg_dir])

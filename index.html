@@ -250,6 +250,8 @@ const state = {
   historyLoaded: false,
   showConsent: false,
   consentResolve: null,
+  allowCookies: false,
+  runtimeMissing: false,
 };
 let nextId = 0;
 let historyTimer = null;
@@ -311,12 +313,25 @@ function itemToHistory(item) {
 function loadSettingsLocal() {
   const mc = localStorage.getItem('yt-fetcher-max-concurrent');
   const sp = localStorage.getItem('yt-fetcher-save-path');
+  const ac = localStorage.getItem('yt-fetcher-allow-cookies');
   state.maxConcurrent = mc ? parseInt(mc, 10) || 1 : 1;
   state.savePath = sp || '';
+  state.allowCookies = ac === 'true';
 }
 function saveSettingsLocal() {
   localStorage.setItem('yt-fetcher-max-concurrent', String(state.maxConcurrent));
   localStorage.setItem('yt-fetcher-save-path', state.savePath);
+  localStorage.setItem('yt-fetcher-allow-cookies', String(state.allowCookies));
+}
+function pushSettingsToBackend(extra) {
+  if (!API()) return;
+  const payload = {
+    max_concurrent: state.maxConcurrent,
+    save_path: state.savePath,
+    allow_cookies: state.allowCookies,
+  };
+  if (extra) Object.assign(payload, extra);
+  API().save_settings(payload);
 }
 
 // ── History save (debounced) ──
@@ -362,24 +377,40 @@ async function handleFetch() {
   state.items.unshift({ id, url, status: 'fetching', info: null, selectedFormat: 'best', progress: null, error: null, filePath: null });
   state.url = '';
   render();
+  await fetchInfoForItem(id, url, false);
+}
+
+async function fetchInfoForItem(id, url, retried) {
   try {
-    const consent = await showConsentDialog();
-    if (!consent) {
-      const item = state.items.find(i => i.id === id);
-      if (item) { item.status = 'error'; item.error = 'Cookie access denied'; }
-      render();
-      return;
-    }
     const info = await API().fetch_info(url);
     const item = state.items.find(i => i.id === id);
     if (item) {
       item.status = 'ready';
       item.info = info;
       item.selectedFormat = (info.formats[0] && info.formats[0].formatId) || 'best';
+      item.error = null;
     }
   } catch (e) {
+    const msg = (e && e.message) ? String(e.message) : String(e || 'Failed to fetch video');
     const item = state.items.find(i => i.id === id);
-    if (item) { item.status = 'error'; item.error = (e.message || e) || 'Failed to fetch video'; }
+    if (msg.includes('COOKIE_CONSENT_REQUIRED') && !retried) {
+      const choice = await showCookieDialog();
+      if (choice === 'always' || choice === 'once') {
+        state.allowCookies = true;
+        if (choice === 'always') saveSettingsLocal();
+        try { await API().grant_cookie_access(choice === 'always'); } catch (_) {}
+        await fetchInfoForItem(id, url, true);
+        if (choice === 'once') {
+          state.allowCookies = false;
+          try { await API().save_settings({ allow_cookies: false }); } catch (_) {}
+        }
+        return;
+      }
+      if (item) { item.status = 'error'; item.error = 'This video needs sign-in. Cookie access was not granted.'; }
+    } else if (item) {
+      item.status = 'error';
+      item.error = msg || 'Failed to fetch video';
+    }
   }
   render();
 }
@@ -442,7 +473,12 @@ function handleSelectFormat(id, formatId) {
 
 async function handleSelectFolder() {
   const folder = await API().select_folder();
-  if (folder) { state.savePath = folder; saveSettingsLocal(); render(); }
+  if (folder) {
+    state.savePath = folder;
+    saveSettingsLocal();
+    pushSettingsToBackend();
+    render();
+  }
 }
 
 function handleCheckUpdates() { API().check_for_updates(); }
@@ -544,7 +580,8 @@ function render() {
       ${doneItems.length > 0 ? renderHistory(doneItems) : ''}
       ${state.items.length === 0 && state.historyLoaded ? renderEmptyState() : ''}
     </main>
-    ${state.showConsent ? renderConsentModal() : ''}`;
+    ${state.showConsent ? renderConsentModal() : ''}
+    ${state.runtimeMissing ? renderRuntimeModal() : ''}`;
 
   app.innerHTML = html;
   bindEvents();
@@ -576,6 +613,12 @@ function renderSettings() {
       <button class="btn btn-gray-sm" id="btn-browse" style="flex-shrink:0;padding:6px 8px;font-size:10px;">Browse</button>
     </div>
     ${state.savePath ? '<button class="settings-reset" id="btn-reset-path">Reset to default</button>' : ''}
+    <label class="settings-label">Browser cookies</label>
+    <div class="settings-path-row">
+      <span class="settings-path" style="flex:1" title="Only used for age-restricted or private videos">${state.allowCookies ? 'Allowed for restricted videos' : 'Not allowed'}</span>
+      <button class="btn btn-gray-sm" id="btn-toggle-cookies" style="flex-shrink:0;padding:6px 8px;font-size:10px;">${state.allowCookies ? 'Disable' : 'Enable'}</button>
+    </div>
+    <p class="settings-hint">Cookies are sent to YouTube only, and only when a video needs sign-in.</p>
     <div class="settings-divider"></div>
     <div class="settings-updates-header">
       <span class="settings-label" style="margin-bottom:0">Updates</span>
@@ -675,28 +718,46 @@ function renderEmptyState() {
   </div>`;
 }
 
-// ── Cookie consent modal (C4) ──
+// ── Cookie consent modal (shown only when a video needs sign-in) ──
 function renderConsentModal() {
   return `<div class="consent-overlay" id="consent-overlay">
     <div class="consent-modal">
-      <p class="consent-title">Browser Cookie Access</p>
+      <p class="consent-title">This video needs sign-in</p>
       <p class="consent-body">
-        YouTube requires sign-in to view this video. To proceed, the app needs
-        to read your browser cookies (Edge, Chrome, Firefox, etc.) to
-        authenticate with YouTube on your behalf.
+        It is age-restricted or private, so YouTube needs your browser session
+        to view it. Allow the app to read your browser cookies
+        (Edge, Chrome, Firefox, etc.)?
       </p>
       <p class="consent-warning">
-        Cookies are only sent to YouTube. They are never stored or shared with third parties.
+        Cookies are sent only to YouTube to authenticate. They are never stored or shared.
+        You can change this anytime in Settings.
       </p>
       <div class="consent-btns">
-        <button class="btn btn-gray" id="consent-deny">Deny</button>
-        <button class="btn btn-red" id="consent-allow">Allow</button>
+        <button class="btn btn-gray" id="consent-deny">Not now</button>
+        <button class="btn btn-gray" id="consent-once">Just this once</button>
+        <button class="btn btn-red" id="consent-allow">Always allow</button>
       </div>
     </div>
   </div>`;
 }
 
-function showConsentDialog() {
+function renderRuntimeModal() {
+  return `<div class="consent-overlay" id="runtime-overlay">
+    <div class="consent-modal">
+      <p class="consent-title">Missing required component</p>
+      <p class="consent-body">
+        A JavaScript component required for YouTube downloads is missing.
+        Downloads may fail. Please reinstall the app, or install Deno or Node.js
+        and restart.
+      </p>
+      <div class="consent-btns">
+        <button class="btn btn-red" id="runtime-dismiss">OK</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function showCookieDialog() {
   return new Promise(resolve => {
     state.showConsent = true;
     state.consentResolve = resolve;
@@ -704,12 +765,12 @@ function showConsentDialog() {
   });
 }
 
-function resolveConsent(allowed) {
+function resolveConsent(choice) {
   state.showConsent = false;
   const resolve = state.consentResolve;
   state.consentResolve = null;
   render();
-  if (resolve) resolve(allowed);
+  if (resolve) resolve(choice);
 }
 
 // ── Event binding ──
@@ -755,6 +816,7 @@ function bindEvents() {
     slider.addEventListener('input', e => {
       state.maxConcurrent = parseInt(e.target.value, 10);
       saveSettingsLocal();
+      pushSettingsToBackend();
       render();
     });
   }
@@ -763,7 +825,15 @@ function bindEvents() {
   if (btnBrowse) btnBrowse.addEventListener('click', handleSelectFolder);
 
   const btnReset = document.getElementById('btn-reset-path');
-  if (btnReset) btnReset.addEventListener('click', () => { state.savePath = ''; saveSettingsLocal(); render(); });
+  if (btnReset) btnReset.addEventListener('click', () => { state.savePath = ''; saveSettingsLocal(); pushSettingsToBackend(); render(); });
+
+  const btnToggleCookies = document.getElementById('btn-toggle-cookies');
+  if (btnToggleCookies) btnToggleCookies.addEventListener('click', () => {
+    state.allowCookies = !state.allowCookies;
+    saveSettingsLocal();
+    pushSettingsToBackend({ allow_cookies: state.allowCookies });
+    render();
+  });
 
   const btnCheckUpd = document.getElementById('btn-check-update-settings');
   if (btnCheckUpd) btnCheckUpd.addEventListener('click', handleCheckUpdates);
@@ -795,13 +865,19 @@ function bindEvents() {
   const consentOverlay = document.getElementById('consent-overlay');
   if (consentOverlay) {
     consentOverlay.addEventListener('click', e => {
-      if (e.target === consentOverlay) resolveConsent(false);
+      if (e.target === consentOverlay) resolveConsent('not-now');
     });
   }
   const consentAllow = document.getElementById('consent-allow');
-  if (consentAllow) consentAllow.addEventListener('click', () => resolveConsent(true));
+  if (consentAllow) consentAllow.addEventListener('click', () => resolveConsent('always'));
+  const consentOnce = document.getElementById('consent-once');
+  if (consentOnce) consentOnce.addEventListener('click', () => resolveConsent('once'));
   const consentDeny = document.getElementById('consent-deny');
-  if (consentDeny) consentDeny.addEventListener('click', () => resolveConsent(false));
+  if (consentDeny) consentDeny.addEventListener('click', () => resolveConsent('not-now'));
+
+  // Runtime missing modal
+  const runtimeDismiss = document.getElementById('runtime-dismiss');
+  if (runtimeDismiss) runtimeDismiss.addEventListener('click', () => { state.runtimeMissing = false; render(); });
 }
 
 // Delegated events — registered once globally
@@ -862,6 +938,22 @@ async function init() {
       const v = await API().get_app_version();
       state.appVersion = v;
       render();
+    } catch(e) {}
+
+    try {
+      const s = await API().get_settings();
+      if (s) {
+        if (s.max_concurrent) state.maxConcurrent = s.max_concurrent;
+        if (typeof s.save_path === 'string') state.savePath = s.save_path;
+        if (typeof s.allow_cookies === 'boolean') state.allowCookies = s.allow_cookies;
+        saveSettingsLocal();
+        render();
+      }
+    } catch(e) {}
+
+    try {
+      const rs = await API().get_runtime_status();
+      if (rs && rs.hasJsRuntime === false) { state.runtimeMissing = true; render(); }
     } catch(e) {}
 
     API().check_for_updates();

@@ -2,12 +2,12 @@
 
 ## App
 - **Name:** YouTube Fetcher
-- **Version:** 2.1.0
+- **Version:** 2.1.1
 - **Type:** Desktop (Windows) - Python 3.12+ / 3.14 + pywebview 6.x (Edge WebView2)
 - **Frontend:** Vanilla HTML5 / CSS3 / JavaScript (no framework, single `index.html`)
 - **Database:** None (history stored as JSON in `{userData}/history.json`)
 - **Settings:** JSON file at `{userData}/settings.json`
-- **Binary:** `resources/yt-dlp.exe` + `resources/ffmpeg.exe` (downloaded by `download_ytdlp.py`)
+- **Binary:** `resources/yt-dlp.exe` + `resources/ffmpeg.exe` + `resources/qjs-x64.exe` / `qjs-x86.exe` (downloaded by `download_ytdlp.py`)
 - **Icon:** `media/icon.ico` (multi-size) + `media/icon.png`
 - **Architectures:** x64 (Python 3.14) + x86 (Python 3.12)
 
@@ -40,19 +40,26 @@
 - Update feature: checks GitHub API, downloads arch-specific `-setup-x64.exe` or `-setup-x86.exe`, verifies SHA-256 checksum, launches installer
 - Release notes format for checksums: body must contain `sha256 x64: <hex>` and `sha256 x86: <hex>` lines (app parses the one matching its architecture)
 
-## Security Features (Mod 9)
+## Security Features (Mod 9, revised Mod 10)
 - SHA-256 checksum verification on auto-update downloads (hard-fails if no checksum is listed — no silent fallback)
 - Architecture-aware checksum parsing (release body `sha256 x64: <hex>` / `sha256 x86: <hex>` resolved per running architecture)
 - TLS certificate verification enabled (removed `--no-check-certificates`)
 - YouTube URL validation (only youtube.com/youtu.be URLs accepted)
-- Cookie access consent dialog before browser cookie extraction
+- Cookie consent gate: browser cookies are read **only** when the user has granted access; consent is requested **only** when a video actually needs sign-in (no-cookie path tried first). Choice persisted in `settings.json` (`allow_cookies`) with a Settings toggle.
 - Atomic JSON writes (temp file + rename) to prevent data corruption
-- Path traversal prevention on file deletion
+- Path traversal prevention on file deletion (allow-list = default root, user-data dir, dirs written this session, configured save path)
 - Rate limiting on concurrent downloads (max 10)
 - Thread-safe update state management
 - JavaScript injection prevention (`ensure_ascii=True` in JSON push)
-- Downloaded binary hash verification in `download_ytdlp.py`
+- Downloaded binary hash verification in `download_ytdlp.py` (now includes pinned SHA-256 for the QuickJS runtime)
 - Safe zip extraction (zip-slip prevention)
+
+## Bundled JavaScript Runtime (Mod 10)
+- yt-dlp 2026.x requires an external JS runtime to solve YouTube JS challenges.
+- App bundles **QuickJS-ng** (`qjs.exe`), arch-matched: `resources/qjs-x64.exe` (x64 build) / `resources/qjs-x86.exe` (x86 build).
+- `ytdlp_runner.get_js_runtime_args()` prefers bundled QuickJS, then system `deno`, then system `node`.
+- `download_ytdlp.py` downloads both binaries with pinned SHA-256 (quickjs-ng publishes no checksums).
+- Startup self-check (`backend.get_runtime_status()`) shows a clear dialog if no runtime is available.
 
 ## Modification History
 
@@ -67,6 +74,7 @@
 | 7   | 2.0.0   | 2026-08-18 | **Full rewrite**: Electron+React -> Python+pywebview+vanilla JS. Single-file frontend (`index.html`). PyInstaller single .exe. Inno Setup installer. Same UI/UX, all features preserved. Installer size: ~83 MB (was ~450 MB). |
 | 8   | 2.0.1   | 2026-08-18 | Fixed Settings > Browse button opening file picker instead of folder picker (dialog type 0 -> 20). |
 | 9   | 2.1.0   | 2026-09-06 | **Security audit + dual-arch build.** Modular backend (5 modules). 22 security/bug fixes: SHA-256 update verification (hard-fails if no checksum — no silent fallback), TLS cert validation, cookie consent dialog, YouTube URL validation, atomic JSON writes, path traversal prevention, rate limiting, thread-safe update state, JS injection prevention, binary hash verification, zip-slip fix. Dual-architecture builds (x64 + x86). Architecture-specific installers and auto-updater. Removed obsolete single-arch `youtube_fetcher.spec` and `installer.iss`. |
+| 10  | 2.1.1   | 2026-10-09 | **UX + dependency fixes.** (1) Custom download folder was silently ignored when outside `%USERPROFILE%` (other drives/UNC) — now any absolute user-picked folder is honored, invalid paths raise an explicit error (no silent fallback), and `delete_file` allow-list includes session dirs + saved path. (2) Bundled **QuickJS-ng v0.17.0** JS runtime per architecture so YouTube downloads work without Node.js/Python (`download_ytdlp.py` pins SHA-256; `ytdlp_runner.get_js_runtime_args()` selects bundled QuickJS → deno → node; startup self-check dialog). (3) Cookie consent redesigned: no-cookie fetch first, prompt only when a video needs sign-in, calm accurate copy with "Always allow / Just this once / Not now", choice persisted in `settings.json` (`allow_cookies`) + Settings toggle, backend consent gate. (4) `build.bat` now detects Inno Setup at `E:\AIprojects\AI Agent\InnoSetup\ISCC.exe`. |
 
 ## Update Feature
 - Publish provider: GitHub (`chamarawickramarathne-spec/youtube-fetcher`).
@@ -84,4 +92,9 @@
 - pywebview 6.x (Edge WebView2)
 - pyperclip (clipboard)
 - PyInstaller 6.x (build)
-- Inno Setup 6 (installer)
+- Inno Setup 6 (installer, at `E:\AIprojects\AI Agent\InnoSetup\ISCC.exe`)
+- QuickJS-ng v0.17.0 (bundled JS runtime; downloaded by `download_ytdlp.py`)
+
+## Development Workflow (mandatory)
+- After every modification: build (both architectures), silently install the x64 build locally, and auto-launch it for the user to verify.
+- **Never commit, tag, or create a GitHub release until the user explicitly approves.** Wait for verification first.
