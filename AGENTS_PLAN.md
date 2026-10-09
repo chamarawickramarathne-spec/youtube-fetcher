@@ -1,8 +1,13 @@
 # AGENTS_PLAN.md — YouTube Fetcher
 
 ## Goal
-Ship v2.1.3 (test release carrying the installer upgrade fix), on top of the v2.1.1
-UX/dependency fixes. **Release is withheld until the user explicitly approves.**
+Ship v2.1.4 (installer self-kill fix), carrying the Mod 11 installer upgrade fix and the
+v2.1.1 UX/dependency fixes. **Release is withheld until the user explicitly approves.**
+
+## Completed — v2.1.4 (Mod 13)
+- Fix: the Mod 11 force-close used `taskkill /T`, which killed the installer itself
+  because the in-app updater launches the installer as a **child** of the running app.
+  Changed both installers to `taskkill /F /IM youtube-fetcher.exe` (no `/T`).
 
 ## Completed — v2.1.3 (Mod 12, test release)
 - Version bump only (no functional change) to publish the Mod 11 installer fix and

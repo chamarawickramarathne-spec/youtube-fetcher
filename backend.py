@@ -150,7 +150,7 @@ class Backend:
             return ""
 
     def get_app_version(self) -> str:
-        return "2.1.3"
+        return "2.1.4"
 
     # ── Update API ──
 

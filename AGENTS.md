@@ -2,7 +2,7 @@
 
 ## App
 - **Name:** YouTube Fetcher
-- **Version:** 2.1.3
+- **Version:** 2.1.4
 - **Type:** Desktop (Windows) - Python 3.12+ / 3.14 + pywebview 6.x (Edge WebView2)
 - **Frontend:** Vanilla HTML5 / CSS3 / JavaScript (no framework, single `index.html`)
 - **Database:** None (history stored as JSON in `{userData}/history.json`)
@@ -77,6 +77,7 @@
 | 10  | 2.1.1   | 2026-10-09 | **UX + dependency fixes.** (1) Custom download folder was silently ignored when outside `%USERPROFILE%` (other drives/UNC) — now any absolute user-picked folder is honored, invalid paths raise an explicit error (no silent fallback), and `delete_file` allow-list includes session dirs + saved path. (2) Bundled **QuickJS-ng v0.17.0** JS runtime per architecture so YouTube downloads work without Node.js/Python (`download_ytdlp.py` pins SHA-256; `ytdlp_runner.get_js_runtime_args()` selects bundled QuickJS → deno → node; startup self-check dialog). (3) Cookie consent redesigned: no-cookie fetch first, prompt only when a video needs sign-in, calm accurate copy with "Always allow / Just this once / Not now", choice persisted in `settings.json` (`allow_cookies`) + Settings toggle, backend consent gate. (4) `build.bat` now detects Inno Setup at `E:\AIprojects\AI Agent\InnoSetup\ISCC.exe`. |
 | 11  | 2.1.2   | 2026-10-09 | **Installer upgrade fix.** Installing over a running app failed: Inno's Restart Manager could not close the PyInstaller process → `DeleteFile failed; code 5` and the old exe/version stayed. Added an Inno `[Code]` `PrepareToInstall` step to both installers that force-closes `youtube-fetcher.exe` (`taskkill /F /T /IM youtube-fetcher.exe`) before file copying; set `CloseApplications=no` / `RestartApplications=no` to suppress the broken Restart Manager prompt. Verified: installing while the app is running now closes it and replaces the exe (timestamp updates, exit 0, no prompt). Also fixes the in-app updater path (it launches the installer while the app is running). |
 | 12  | 2.1.3   | 2026-10-09 | **Test release.** Version bump only (no functional change) to publish the Mod 11 installer fix and exercise the update flow end-to-end: installed 2.1.2 detects 2.1.3, downloads the arch-matched installer, verifies SHA-256, and the installer closes the running app and replaces it. Local install step intentionally skipped so a running 2.1.2 could test updating to 2.1.3. |
+| 13  | 2.1.4   | 2026-10-09 | **Fix installer self-kill.** The Mod 11 force-close used `taskkill /T`, but the in-app updater launches the installer as a **child** of the running app, so `/T` (kill process tree) also killed the installer — its window closed mid-update. Changed both installers (`installer-x64.iss`, `installer-x86.iss`) to `taskkill /F /IM youtube-fetcher.exe` (no `/T`); `/IM` still terminates both PyInstaller app processes (same image name) without touching the installer child. |
 
 ## Update Feature
 - Publish provider: GitHub (`chamarawickramarathne-spec/youtube-fetcher`).

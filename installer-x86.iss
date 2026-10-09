@@ -4,7 +4,7 @@
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}}
 AppName=YouTube Fetcher
-AppVersion=2.1.3
+AppVersion=2.1.4
 AppPublisher=YouTube Fetcher
 DefaultDirName={autopf}\YouTube Fetcher
 DefaultGroupName=YouTube Fetcher
@@ -42,7 +42,7 @@ var
 begin
   Log('Closing any running YouTube Fetcher instance before install.');
   Exec(ExpandConstant('{sys}\taskkill.exe'),
-       '/F /T /IM youtube-fetcher.exe', '',
+       '/F /IM youtube-fetcher.exe', '',
        SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Sleep(500);
 end;
