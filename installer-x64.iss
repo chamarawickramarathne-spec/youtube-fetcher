@@ -4,7 +4,7 @@
 [Setup]
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}}
 AppName=YouTube Fetcher
-AppVersion=2.1.1
+AppVersion=2.1.3
 AppPublisher=YouTube Fetcher
 DefaultDirName={autopf}\YouTube Fetcher
 DefaultGroupName=YouTube Fetcher
@@ -18,6 +18,8 @@ WizardStyle=modern
 SetupIconFile=media\icon.ico
 UninstallDisplayIcon={app}\youtube-fetcher.exe
 PrivilegesRequired=lowest
+CloseApplications=no
+RestartApplications=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -34,3 +36,22 @@ Name: "{autodesktop}\YouTube Fetcher"; Filename: "{app}\youtube-fetcher.exe"; Ta
 
 [Run]
 Filename: "{app}\youtube-fetcher.exe"; Description: "Launch YouTube Fetcher"; Flags: nowait postinstall skipifsilent
+
+[Code]
+procedure TerminateRunningApp();
+var
+  ResultCode: Integer;
+begin
+  Log('Closing any running YouTube Fetcher instance before install.');
+  Exec(ExpandConstant('{sys}\taskkill.exe'),
+       '/F /T /IM youtube-fetcher.exe', '',
+       SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(500);
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  NeedsRestart := False;
+  TerminateRunningApp();
+  Result := '';
+end;
